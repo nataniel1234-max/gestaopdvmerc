@@ -13,7 +13,7 @@ import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
 import { exigirCaixaAberto } from "@/lib/caixa";
-import { Link } from "@tanstack/react-router";
+
 import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
 import { CaixaControles } from "@/components/CaixaControles";
 import { imprimirDocumento } from "@/lib/print-config";
