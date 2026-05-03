@@ -18,6 +18,7 @@ import {
   DoorOpen, DoorClosed, ArrowDownCircle, ArrowUpCircle, Wallet, Banknote, Smartphone,
   CreditCard, BookOpen, AlertTriangle, Printer, History,
 } from "lucide-react";
+import { GuiaCaixa, type CaixaCompleto } from "@/components/GuiaCaixa";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -34,6 +35,7 @@ function CaixaPage() {
   const [openFechar, setOpenFechar] = useState(false);
   const [openMov, setOpenMov] = useState<null | "sangria" | "suprimento" | "despesa">(null);
   const [openHist, setOpenHist] = useState(false);
+  const [guiaCaixa, setGuiaCaixa] = useState<CaixaCompleto | null>(null);
 
   // Form abrir
   const [operador, setOperador] = useState("");
@@ -157,7 +159,7 @@ function CaixaPage() {
       const informado = Number(valorFechado || 0);
       const calculado = resumo.saldoDinheiro;
       const dif = informado - calculado;
-      const { error } = await supabase.from("caixas").update({
+      const { data, error } = await supabase.from("caixas").update({
         status: "fechado",
         valor_fechamento_informado: informado,
         valor_fechamento_calculado: calculado,
@@ -174,12 +176,14 @@ function CaixaPage() {
         qtd_vendas: resumo.qtd,
         observacoes_fechamento: obsFechamento || null,
         fechado_em: new Date().toISOString(),
-      }).eq("id", caixa.id);
+      }).eq("id", caixa.id).select().single();
       if (error) throw error;
+      return data as CaixaCompleto;
     },
-    onSuccess: () => {
+    onSuccess: (caixaFechado) => {
       toast.success("Caixa fechado!");
       setOpenFechar(false); setValorFechado(""); setObsFechamento("");
+      setGuiaCaixa(caixaFechado);
       qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
       qc.invalidateQueries({ queryKey: ["caixas-fechados"] });
     },
@@ -210,7 +214,8 @@ function CaixaPage() {
           obs={obsAbertura} setObs={setObsAbertura}
           onConfirm={() => abrir.mutate()} loading={abrir.isPending} />
 
-        <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} />
+        <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} onPrint={(c) => setGuiaCaixa(c)} />
+        <DialogGuia caixa={guiaCaixa} onClose={() => setGuiaCaixa(null)} />
       </div>
     );
   }
@@ -359,7 +364,8 @@ function CaixaPage() {
         </DialogContent>
       </Dialog>
 
-      <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} />
+      <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} onPrint={(c) => setGuiaCaixa(c)} />
+      <DialogGuia caixa={guiaCaixa} onClose={() => setGuiaCaixa(null)} movimentacoes={movimentacoes as any} vendas={vendas as any} recebimentosFiado={recebimentosFiado as any} />
     </div>
   );
 }
@@ -467,7 +473,7 @@ function DialogMov({
   );
 }
 
-function DialogHistorico({ open, onOpenChange, caixas }: { open: boolean; onOpenChange: (v: boolean) => void; caixas: any[] }) {
+function DialogHistorico({ open, onOpenChange, caixas, onPrint }: { open: boolean; onOpenChange: (v: boolean) => void; caixas: any[]; onPrint?: (c: CaixaCompleto) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
@@ -494,7 +500,7 @@ function DialogHistorico({ open, onOpenChange, caixas }: { open: boolean; onOpen
                     <TableCell className="text-right">{brl(c.valor_fechamento_calculado ?? 0)}</TableCell>
                     <TableCell className="text-right">{brl(c.valor_fechamento_informado ?? 0)}</TableCell>
                     <TableCell className={`text-right font-bold ${Math.abs(dif) < 0.005 ? "text-success" : "text-destructive"}`}>{brl(dif)}</TableCell>
-                    <TableCell><Button size="icon" variant="ghost" onClick={() => window.print()}><Printer className="h-4 w-4" /></Button></TableCell>
+                    <TableCell><Button size="icon" variant="ghost" onClick={() => onPrint?.(c as CaixaCompleto)}><Printer className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 );
               })}
@@ -505,3 +511,34 @@ function DialogHistorico({ open, onOpenChange, caixas }: { open: boolean; onOpen
     </Dialog>
   );
 }
+
+function DialogGuia({
+  caixa, onClose, movimentacoes, vendas, recebimentosFiado,
+}: {
+  caixa: CaixaCompleto | null;
+  onClose: () => void;
+  movimentacoes?: any[];
+  vendas?: any[];
+  recebimentosFiado?: any[];
+}) {
+  return (
+    <Dialog open={!!caixa} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Printer className="h-5 w-5" /> Guia de Fechamento</DialogTitle></DialogHeader>
+        {caixa && (
+          <GuiaCaixa
+            caixa={caixa}
+            movimentacoes={movimentacoes ?? []}
+            vendas={vendas ?? []}
+            recebimentosFiado={recebimentosFiado ?? []}
+          />
+        )}
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimir guia</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

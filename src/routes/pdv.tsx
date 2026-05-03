@@ -71,6 +71,34 @@ function PDVPage() {
 
   useEffect(() => { inputBuscaRef.current?.focus(); }, []);
 
+  // Atalhos globais (quando modal de pagamento aberto)
+  useEffect(() => {
+    if (!pagOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Esc fecha modal
+      if (e.key === "Escape") { e.preventDefault(); setPagOpen(false); return; }
+      // Atalhos de forma de pagamento (Alt para não conflitar com input numérico)
+      const k = e.key.toLowerCase();
+      if (e.altKey || (e.target as HTMLElement)?.tagName !== "INPUT") {
+        if (k === "d") { e.preventDefault(); setForma("dinheiro"); }
+        else if (k === "p") { e.preventDefault(); setForma("pix"); }
+        else if (k === "x") { e.preventDefault(); setForma("debito"); }
+        else if (k === "c") { e.preventDefault(); setForma("credito"); }
+        else if (k === "f") { e.preventDefault(); setForma("fiado"); }
+      }
+      // Enter ou F4 confirma
+      if (e.key === "F4" || (e.key === "Enter" && (e.target as HTMLElement)?.tagName !== "TEXTAREA")) {
+        if (forma !== "dinheiro" || Number(valorRecebido) >= total) {
+          e.preventDefault();
+          finalizar.mutate();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagOpen, forma, valorRecebido, total]);
+
   const adicionar = (p: typeof produtos[number]) => {
     setCarrinho((prev) => {
       const ex = prev.find((x) => x.produto_id === p.id);
@@ -312,12 +340,16 @@ function PDVPage() {
             <div>
               <Label>Forma de pagamento</Label>
               <div className="grid grid-cols-5 gap-2 mt-1">
-                {(["dinheiro", "debito", "credito", "pix", "fiado"] as Forma[]).map((f) => (
-                  <Button key={f} type="button" variant={forma === f ? "default" : "outline"}
-                    onClick={() => setForma(f)} className="flex-col h-auto py-2 gap-1">
-                    {formaIcon[f]}<span className="text-[10px] capitalize">{f}</span>
-                  </Button>
-                ))}
+                {(["dinheiro", "debito", "credito", "pix", "fiado"] as Forma[]).map((f) => {
+                  const atalhos: Record<Forma, string> = { dinheiro: "D", debito: "X", credito: "C", pix: "P", fiado: "F" };
+                  return (
+                    <Button key={f} type="button" variant={forma === f ? "default" : "outline"}
+                      onClick={() => setForma(f)} className="flex-col h-auto py-2 gap-1 relative">
+                      {formaIcon[f]}<span className="text-[10px] capitalize">{f}</span>
+                      <span className="absolute top-1 right-1 text-[9px] font-mono opacity-60">{atalhos[f]}</span>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
@@ -325,6 +357,15 @@ function PDVPage() {
               <div>
                 <Label>Valor recebido</Label>
                 <Input type="number" step="0.01" value={valorRecebido} onChange={(e) => setValorRecebido(e.target.value)} className="text-lg h-11" autoFocus />
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {[5, 10, 20, 50, 100, 200].map((v) => (
+                    <Button key={v} size="sm" type="button" variant="outline"
+                      onClick={() => setValorRecebido(String(v))}
+                      className="text-xs h-7 px-2">R$ {v}</Button>
+                  ))}
+                  <Button size="sm" type="button" variant="outline" className="text-xs h-7 px-2"
+                    onClick={() => setValorRecebido(String(total.toFixed(2)))}>Exato</Button>
+                </div>
                 <div className="flex justify-between mt-2 text-sm">
                   <span>Troco</span>
                   <span className="font-bold text-success text-lg">{brl(troco)}</span>
@@ -343,6 +384,10 @@ function PDVPage() {
             )}
 
             <div><Label>Observações</Label><Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} /></div>
+
+            <div className="text-[10px] text-muted-foreground bg-muted p-2 rounded font-mono">
+              <strong>Atalhos:</strong> D=Dinheiro · P=PIX · X=Débito · C=Crédito · F=Fiado · Enter/F4=Confirmar · Esc=Cancelar
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPagOpen(false)}>Voltar</Button>

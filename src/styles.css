@@ -150,14 +150,17 @@
   }
 }
 
-/* Print: cupom não fiscal */
+/* Print: cupom não fiscal, guia de caixa, recibo de fiado */
 @media print {
   body * { visibility: hidden; }
-  #cupom-print, #cupom-print * { visibility: visible; }
-  #cupom-print {
+  #cupom-print, #cupom-print *,
+  #guia-print, #guia-print *,
+  #recibo-print, #recibo-print * { visibility: visible; }
+  #cupom-print, #guia-print, #recibo-print {
     position: absolute; left: 0; top: 0; width: 80mm;
     font-family: 'Courier New', monospace; color: #000; background: #fff;
     padding: 4mm; font-size: 11px; line-height: 1.35;
   }
   @page { size: 80mm auto; margin: 0; }
 }
+
