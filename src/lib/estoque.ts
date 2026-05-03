@@ -38,7 +38,7 @@ export async function aplicarMovimentacao(args: {
   });
   if (e2) throw e2;
 
-  const update: Record<string, unknown> = { estoque_atual: estoque_novo };
+  const update: Database["public"]["Tables"]["produtos"]["Update"] = { estoque_atual: estoque_novo };
   if (args.tipo === "entrada_compra" && args.custo_unitario != null) {
     update.preco_custo = args.custo_unitario;
   }
