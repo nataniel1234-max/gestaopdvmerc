@@ -159,6 +159,8 @@ function PDVPage() {
       setPagOpen(false); setForma("dinheiro");
       qc.invalidateQueries({ queryKey: ["produtos-pdv"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["caixa-vendas"] });
+      qc.invalidateQueries({ queryKey: ["caixa-movs"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
