@@ -140,6 +140,9 @@ export function GuiaCaixa({
       <div className="text-center text-[10px] mt-3">
         <div className="border-t border-black mt-8 pt-1">Assinatura do operador</div>
       </div>
+      {cfg.mostrar_rodape && cfg.rodape && (
+        <div className="text-center text-[10px] mt-2 whitespace-pre-line">{cfg.rodape}</div>
+      )}
       <div className="text-center text-[9px] mt-2 opacity-70">{dt(new Date())}</div>
     </div>
   );
