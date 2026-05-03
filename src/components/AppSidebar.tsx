@@ -10,6 +10,7 @@ import {
   Receipt,
   CreditCard,
   Store,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
