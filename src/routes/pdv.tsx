@@ -340,12 +340,16 @@ function PDVPage() {
             <div>
               <Label>Forma de pagamento</Label>
               <div className="grid grid-cols-5 gap-2 mt-1">
-                {(["dinheiro", "debito", "credito", "pix", "fiado"] as Forma[]).map((f) => (
-                  <Button key={f} type="button" variant={forma === f ? "default" : "outline"}
-                    onClick={() => setForma(f)} className="flex-col h-auto py-2 gap-1">
-                    {formaIcon[f]}<span className="text-[10px] capitalize">{f}</span>
-                  </Button>
-                ))}
+                {(["dinheiro", "debito", "credito", "pix", "fiado"] as Forma[]).map((f) => {
+                  const atalhos: Record<Forma, string> = { dinheiro: "D", debito: "X", credito: "C", pix: "P", fiado: "F" };
+                  return (
+                    <Button key={f} type="button" variant={forma === f ? "default" : "outline"}
+                      onClick={() => setForma(f)} className="flex-col h-auto py-2 gap-1 relative">
+                      {formaIcon[f]}<span className="text-[10px] capitalize">{f}</span>
+                      <span className="absolute top-1 right-1 text-[9px] font-mono opacity-60">{atalhos[f]}</span>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
@@ -353,6 +357,15 @@ function PDVPage() {
               <div>
                 <Label>Valor recebido</Label>
                 <Input type="number" step="0.01" value={valorRecebido} onChange={(e) => setValorRecebido(e.target.value)} className="text-lg h-11" autoFocus />
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {[5, 10, 20, 50, 100, 200].map((v) => (
+                    <Button key={v} size="sm" type="button" variant="outline"
+                      onClick={() => setValorRecebido(String(v))}
+                      className="text-xs h-7 px-2">R$ {v}</Button>
+                  ))}
+                  <Button size="sm" type="button" variant="outline" className="text-xs h-7 px-2"
+                    onClick={() => setValorRecebido(String(total.toFixed(2)))}>Exato</Button>
+                </div>
                 <div className="flex justify-between mt-2 text-sm">
                   <span>Troco</span>
                   <span className="font-bold text-success text-lg">{brl(troco)}</span>
@@ -361,6 +374,20 @@ function PDVPage() {
             )}
 
             {forma === "fiado" && (
+              <div className="bg-warning/10 border border-warning/40 p-3 rounded-md text-sm">
+                {clienteSel ? (
+                  clienteSel.permite_fiado
+                    ? <>Será adicionado <strong>{brl(total)}</strong> ao saldo de <strong>{clienteSel.nome}</strong>. Novo saldo: <strong>{brl(Number(clienteSel.saldo_devedor) + total)}</strong></>
+                    : <span className="text-destructive">Este cliente não tem fiado liberado. Edite o cadastro.</span>
+                ) : <span className="text-destructive">Selecione um cliente para venda fiada.</span>}
+              </div>
+            )}
+
+            <div><Label>Observações</Label><Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} /></div>
+
+            <div className="text-[10px] text-muted-foreground bg-muted p-2 rounded font-mono">
+              <strong>Atalhos:</strong> D=Dinheiro · P=PIX · X=Débito · C=Crédito · F=Fiado · Enter/F4=Confirmar · Esc=Cancelar
+            </div>
               <div className="bg-warning/10 border border-warning/40 p-3 rounded-md text-sm">
                 {clienteSel ? (
                   clienteSel.permite_fiado
