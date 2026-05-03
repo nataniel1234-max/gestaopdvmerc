@@ -18,6 +18,7 @@ import {
   DoorOpen, DoorClosed, ArrowDownCircle, ArrowUpCircle, Wallet, Banknote, Smartphone,
   CreditCard, BookOpen, AlertTriangle, Printer, History,
 } from "lucide-react";
+import { GuiaCaixa, type CaixaCompleto } from "@/components/GuiaCaixa";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
