@@ -54,6 +54,11 @@ function PDVPage() {
     queryKey: ["clientes-pdv"],
     queryFn: async () => (await supabase.from("clientes").select("id, nome, permite_fiado, limite_credito, saldo_devedor").eq("ativo", true).order("nome")).data ?? [],
   });
+  const { data: caixaAberto } = useQuery({
+    queryKey: ["caixa-aberto"],
+    queryFn: async () => (await supabase.from("caixas").select("id, aberto_em, operador").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle()).data,
+    refetchInterval: 5000,
+  });
 
   const clienteSel = clientes.find((c) => c.id === cliente_id);
   const sugestoes = busca.length >= 1
