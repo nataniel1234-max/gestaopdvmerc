@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useDeferredValue } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -50,21 +50,31 @@ function PDVPage() {
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-pdv"],
     queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade").eq("ativo", true).order("nome")).data ?? [],
+    staleTime: 2 * 60_000,
   });
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-pdv"],
     queryFn: async () => (await supabase.from("clientes").select("id, nome, permite_fiado, limite_credito, saldo_devedor").eq("ativo", true).order("nome")).data ?? [],
+    staleTime: 2 * 60_000,
   });
   const { data: caixaAberto } = useQuery({
     queryKey: ["caixa-aberto"],
     queryFn: async () => (await supabase.from("caixas").select("id, aberto_em, operador").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle()).data,
-    refetchInterval: 5000,
+    staleTime: 60_000,
   });
 
-  const clienteSel = clientes.find((c) => c.id === cliente_id);
-  const sugestoes = busca.length >= 1
-    ? produtos.filter((p) => p.nome.toLowerCase().includes(busca.toLowerCase()) || (p.codigo_barras ?? "").includes(busca)).slice(0, 6)
-    : [];
+  const clienteSel = useMemo(() => clientes.find((c) => c.id === cliente_id), [clientes, cliente_id]);
+  const buscaDeferida = useDeferredValue(busca);
+  const sugestoes = useMemo(() => {
+    if (buscaDeferida.length < 1) return [];
+    const q = buscaDeferida.toLowerCase();
+    const out: typeof produtos = [];
+    for (let i = 0; i < produtos.length && out.length < 6; i++) {
+      const p = produtos[i];
+      if (p.nome.toLowerCase().includes(q) || (p.codigo_barras ?? "").includes(buscaDeferida)) out.push(p);
+    }
+    return out;
+  }, [produtos, buscaDeferida]);
 
   const subtotal = carrinho.reduce((s, i) => s + i.quantidade * i.preco_unitario, 0);
   const total = Math.max(0, subtotal - Number(desconto || 0));
