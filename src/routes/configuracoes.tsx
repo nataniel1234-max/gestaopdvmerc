@@ -17,7 +17,7 @@ import {
   imprimirDocumento, type PrintConfig, type PrintConfigDoc, type PrintTipo,
 } from "@/lib/print-config";
 import { toast } from "sonner";
-import { Printer, RotateCcw, Save, Settings as SettingsIcon } from "lucide-react";
+import { Printer, RotateCcw, Save } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações de Impressão" }] }),
@@ -44,9 +44,8 @@ function ConfigPage() {
   return (
     <div>
       <PageHeader
-        title="Configurações"
+        title="Configurações de Impressão"
         description="Personalize tamanho da bobina, cabeçalho/rodapé e número de vias para cada tipo de impressão."
-        icon={<SettingsIcon className="h-6 w-6" />}
         actions={
           <Button onClick={salvar} size="lg">
             <Save className="h-4 w-4 mr-1" /> Salvar alterações
