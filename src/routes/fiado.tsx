@@ -14,6 +14,7 @@ import { brl, dt } from "@/lib/format";
 import { CreditCard, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { exigirCaixaAberto } from "@/lib/caixa";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
