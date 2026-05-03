@@ -8,13 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, DoorClosed } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store } from "lucide-react";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
 import { exigirCaixaAberto } from "@/lib/caixa";
 import { Link } from "@tanstack/react-router";
 import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
+import { CaixaControles } from "@/components/CaixaControles";
 import { imprimirDocumento } from "@/lib/print-config";
 import type { Database } from "@/integrations/supabase/types";
 
