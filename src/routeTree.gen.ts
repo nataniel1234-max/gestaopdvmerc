@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as SaidasRouteImport } from './routes/saidas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
+import { Route as PdvRouteImport } from './routes/pdv'
 import { Route as FornecedoresRouteImport } from './routes/fornecedores'
 import { Route as FiadoRouteImport } from './routes/fiado'
 import { Route as EntradasRouteImport } from './routes/entradas'
@@ -31,6 +32,11 @@ const SaidasRoute = SaidasRouteImport.update({
 const ProdutosRoute = ProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PdvRoute = PdvRouteImport.update({
+  id: '/pdv',
+  path: '/pdv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FornecedoresRoute = FornecedoresRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/entradas': typeof EntradasRoute
   '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
+  '/pdv': typeof PdvRoute
   '/produtos': typeof ProdutosRoute
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/entradas': typeof EntradasRoute
   '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
+  '/pdv': typeof PdvRoute
   '/produtos': typeof ProdutosRoute
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/entradas': typeof EntradasRoute
   '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
+  '/pdv': typeof PdvRoute
   '/produtos': typeof ProdutosRoute
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/entradas'
     | '/fiado'
     | '/fornecedores'
+    | '/pdv'
     | '/produtos'
     | '/saidas'
     | '/vendas'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/entradas'
     | '/fiado'
     | '/fornecedores'
+    | '/pdv'
     | '/produtos'
     | '/saidas'
     | '/vendas'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/entradas'
     | '/fiado'
     | '/fornecedores'
+    | '/pdv'
     | '/produtos'
     | '/saidas'
     | '/vendas'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   EntradasRoute: typeof EntradasRoute
   FiadoRoute: typeof FiadoRoute
   FornecedoresRoute: typeof FornecedoresRoute
+  PdvRoute: typeof PdvRoute
   ProdutosRoute: typeof ProdutosRoute
   SaidasRoute: typeof SaidasRoute
   VendasRoute: typeof VendasRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/produtos'
       fullPath: '/produtos'
       preLoaderRoute: typeof ProdutosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pdv': {
+      id: '/pdv'
+      path: '/pdv'
+      fullPath: '/pdv'
+      preLoaderRoute: typeof PdvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fornecedores': {
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntradasRoute: EntradasRoute,
   FiadoRoute: FiadoRoute,
   FornecedoresRoute: FornecedoresRoute,
+  PdvRoute: PdvRoute,
   ProdutosRoute: ProdutosRoute,
   SaidasRoute: SaidasRoute,
   VendasRoute: VendasRoute,
