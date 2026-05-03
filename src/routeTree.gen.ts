@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendasRouteImport } from './routes/vendas'
 import { Route as SaidasRouteImport } from './routes/saidas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as FornecedoresRouteImport } from './routes/fornecedores'
+import { Route as FiadoRouteImport } from './routes/fiado'
 import { Route as EntradasRouteImport } from './routes/entradas'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VendasRoute = VendasRouteImport.update({
+  id: '/vendas',
+  path: '/vendas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SaidasRoute = SaidasRouteImport.update({
   id: '/saidas',
   path: '/saidas',
@@ -29,6 +36,11 @@ const ProdutosRoute = ProdutosRouteImport.update({
 const FornecedoresRoute = FornecedoresRouteImport.update({
   id: '/fornecedores',
   path: '/fornecedores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiadoRoute = FiadoRouteImport.update({
+  id: '/fiado',
+  path: '/fiado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntradasRoute = EntradasRouteImport.update({
@@ -51,26 +63,32 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
   '/entradas': typeof EntradasRoute
+  '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
   '/produtos': typeof ProdutosRoute
   '/saidas': typeof SaidasRoute
+  '/vendas': typeof VendasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
   '/entradas': typeof EntradasRoute
+  '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
   '/produtos': typeof ProdutosRoute
   '/saidas': typeof SaidasRoute
+  '/vendas': typeof VendasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
   '/entradas': typeof EntradasRoute
+  '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
   '/produtos': typeof ProdutosRoute
   '/saidas': typeof SaidasRoute
+  '/vendas': typeof VendasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,38 +96,53 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes'
     | '/entradas'
+    | '/fiado'
     | '/fornecedores'
     | '/produtos'
     | '/saidas'
+    | '/vendas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/clientes'
     | '/entradas'
+    | '/fiado'
     | '/fornecedores'
     | '/produtos'
     | '/saidas'
+    | '/vendas'
   id:
     | '__root__'
     | '/'
     | '/clientes'
     | '/entradas'
+    | '/fiado'
     | '/fornecedores'
     | '/produtos'
     | '/saidas'
+    | '/vendas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesRoute: typeof ClientesRoute
   EntradasRoute: typeof EntradasRoute
+  FiadoRoute: typeof FiadoRoute
   FornecedoresRoute: typeof FornecedoresRoute
   ProdutosRoute: typeof ProdutosRoute
   SaidasRoute: typeof SaidasRoute
+  VendasRoute: typeof VendasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendas': {
+      id: '/vendas'
+      path: '/vendas'
+      fullPath: '/vendas'
+      preLoaderRoute: typeof VendasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/saidas': {
       id: '/saidas'
       path: '/saidas'
@@ -129,6 +162,13 @@ declare module '@tanstack/react-router' {
       path: '/fornecedores'
       fullPath: '/fornecedores'
       preLoaderRoute: typeof FornecedoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fiado': {
+      id: '/fiado'
+      path: '/fiado'
+      fullPath: '/fiado'
+      preLoaderRoute: typeof FiadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entradas': {
@@ -159,9 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesRoute: ClientesRoute,
   EntradasRoute: EntradasRoute,
+  FiadoRoute: FiadoRoute,
   FornecedoresRoute: FornecedoresRoute,
   ProdutosRoute: ProdutosRoute,
   SaidasRoute: SaidasRoute,
+  VendasRoute: VendasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,335 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen } from "lucide-react";
+import { brl } from "@/lib/format";
+import { toast } from "sonner";
+import { aplicarMovimentacao } from "@/lib/estoque";
+import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
+import type { Database } from "@/integrations/supabase/types";
+
+type Forma = Database["public"]["Enums"]["forma_pagamento"];
+
+export const Route = createFileRoute("/pdv")({
+  head: () => ({ meta: [{ title: "PDV — Frente de Caixa" }] }),
+  component: PDVPage,
+});
+
+type Carrinho = {
+  produto_id: string;
+  produto_nome: string;
+  preco_unitario: number;
+  quantidade: number;
+  estoque_disponivel: number;
+  unidade: string;
+};
+
+function PDVPage() {
+  const qc = useQueryClient();
+  const inputBuscaRef = useRef<HTMLInputElement>(null);
+  const [busca, setBusca] = useState("");
+  const [carrinho, setCarrinho] = useState<Carrinho[]>([]);
+  const [cliente_id, setClienteId] = useState<string>("");
+  const [desconto, setDesconto] = useState("0");
+  const [pagOpen, setPagOpen] = useState(false);
+  const [forma, setForma] = useState<Forma>("dinheiro");
+  const [valorRecebido, setValorRecebido] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [cupomFinal, setCupomFinal] = useState<VendaCompleta | null>(null);
+
+  const { data: produtos = [] } = useQuery({
+    queryKey: ["produtos-pdv"],
+    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade").eq("ativo", true).order("nome")).data ?? [],
+  });
+  const { data: clientes = [] } = useQuery({
+    queryKey: ["clientes-pdv"],
+    queryFn: async () => (await supabase.from("clientes").select("id, nome, permite_fiado, limite_credito, saldo_devedor").eq("ativo", true).order("nome")).data ?? [],
+  });
+
+  const clienteSel = clientes.find((c) => c.id === cliente_id);
+  const sugestoes = busca.length >= 1
+    ? produtos.filter((p) => p.nome.toLowerCase().includes(busca.toLowerCase()) || (p.codigo_barras ?? "").includes(busca)).slice(0, 6)
+    : [];
+
+  const subtotal = carrinho.reduce((s, i) => s + i.quantidade * i.preco_unitario, 0);
+  const total = Math.max(0, subtotal - Number(desconto || 0));
+  const troco = forma === "dinheiro" ? Math.max(0, Number(valorRecebido || 0) - total) : 0;
+
+  useEffect(() => { inputBuscaRef.current?.focus(); }, []);
+
+  const adicionar = (p: typeof produtos[number]) => {
+    setCarrinho((prev) => {
+      const ex = prev.find((x) => x.produto_id === p.id);
+      if (ex) {
+        if (ex.quantidade + 1 > Number(p.estoque_atual)) { toast.warning("Estoque insuficiente"); return prev; }
+        return prev.map((x) => x.produto_id === p.id ? { ...x, quantidade: x.quantidade + 1 } : x);
+      }
+      if (Number(p.estoque_atual) <= 0) { toast.warning(`${p.nome} sem estoque`); return prev; }
+      return [...prev, { produto_id: p.id, produto_nome: p.nome, preco_unitario: Number(p.preco_venda), quantidade: 1, estoque_disponivel: Number(p.estoque_atual), unidade: p.unidade }];
+    });
+    setBusca("");
+    inputBuscaRef.current?.focus();
+  };
+
+  // Enter / scanner: se há sugestões, adiciona a primeira; se for código exato, adiciona direto
+  const handleBuscaKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const exato = produtos.find((p) => p.codigo_barras === busca);
+      if (exato) return adicionar(exato);
+      if (sugestoes[0]) return adicionar(sugestoes[0]);
+    }
+    if (e.key === "F2") { e.preventDefault(); if (carrinho.length) setPagOpen(true); }
+  };
+
+  const setQtd = (id: string, q: number) => setCarrinho((prev) =>
+    prev.map((x) => x.produto_id === id ? { ...x, quantidade: Math.max(0.001, Math.min(q, x.estoque_disponivel)) } : x));
+  const remover = (id: string) => setCarrinho((prev) => prev.filter((x) => x.produto_id !== id));
+  const limpar = () => { if (carrinho.length === 0 || confirm("Cancelar venda atual?")) { setCarrinho([]); setDesconto("0"); setClienteId(""); setObservacoes(""); } };
+
+  const finalizar = useMutation({
+    mutationFn: async () => {
+      if (carrinho.length === 0) throw new Error("Carrinho vazio");
+      if (forma === "fiado") {
+        if (!clienteSel) throw new Error("Selecione um cliente para fiado");
+        if (!clienteSel.permite_fiado) throw new Error("Cliente não tem fiado liberado");
+        const novoSaldo = Number(clienteSel.saldo_devedor) + total;
+        if (Number(clienteSel.limite_credito) > 0 && novoSaldo > Number(clienteSel.limite_credito)) {
+          throw new Error(`Excede limite de crédito (${brl(clienteSel.limite_credito)})`);
+        }
+      }
+      if (forma === "dinheiro" && Number(valorRecebido) < total) throw new Error("Valor recebido insuficiente");
+
+      const { data: venda, error } = await supabase.from("vendas").insert({
+        cliente_id: cliente_id || null,
+        forma_pagamento: forma,
+        subtotal, desconto: Number(desconto || 0), total,
+        valor_recebido: forma === "dinheiro" ? Number(valorRecebido) : total,
+        troco, observacoes: observacoes || null,
+      }).select("*, clientes(nome)").single();
+      if (error) throw error;
+
+      for (const it of carrinho) {
+        await supabase.from("itens_venda").insert({
+          venda_id: venda.id, produto_id: it.produto_id, produto_nome: it.produto_nome,
+          quantidade: it.quantidade, preco_unitario: it.preco_unitario, subtotal: it.quantidade * it.preco_unitario,
+        });
+        await aplicarMovimentacao({
+          produto_id: it.produto_id, tipo: "saida_venda", motivo: "venda",
+          quantidade: it.quantidade, referencia_id: venda.id,
+        });
+      }
+
+      if (forma === "fiado" && clienteSel) {
+        await supabase.from("clientes")
+          .update({ saldo_devedor: Number(clienteSel.saldo_devedor) + total })
+          .eq("id", clienteSel.id);
+      }
+
+      const { data: completa } = await supabase.from("vendas")
+        .select("*, clientes(nome), itens_venda(*)").eq("id", venda.id).single();
+      return completa as VendaCompleta;
+    },
+    onSuccess: (v) => {
+      toast.success(`Venda #${v.numero_cupom} finalizada!`);
+      setCupomFinal(v);
+      setCarrinho([]); setDesconto("0"); setClienteId(""); setObservacoes(""); setValorRecebido("");
+      setPagOpen(false); setForma("dinheiro");
+      qc.invalidateQueries({ queryKey: ["produtos-pdv"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const formaIcon: Record<Forma, React.ReactNode> = {
+    dinheiro: <Banknote className="h-4 w-4" />, debito: <CreditCard className="h-4 w-4" />,
+    credito: <CreditCard className="h-4 w-4" />, pix: <Smartphone className="h-4 w-4" />, fiado: <BookOpen className="h-4 w-4" />,
+  };
+
+  return (
+    <div className="grid lg:grid-cols-[1fr_400px] gap-4 -mx-4 md:-mx-6 px-4 md:px-6 -my-4 md:-my-6 py-4 md:py-6 min-h-[calc(100vh-3.5rem)]">
+      {/* Lado esquerdo: busca + carrinho */}
+      <div className="flex flex-col gap-4 min-w-0">
+        <Card>
+          <CardContent className="p-4">
+            <div className="relative">
+              <Barcode className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+              <Input
+                ref={inputBuscaRef}
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                onKeyDown={handleBuscaKey}
+                placeholder="Bipe o código de barras ou digite o nome do produto... (Enter adiciona, F2 finaliza)"
+                className="pl-10 h-12 text-base"
+                autoFocus
+              />
+              {sugestoes.length > 0 && (
+                <div className="absolute z-20 left-0 right-0 mt-1 bg-popover border rounded-md shadow-elevated max-h-72 overflow-auto">
+                  {sugestoes.map((p) => (
+                    <button key={p.id} onClick={() => adicionar(p)} className="w-full text-left px-3 py-2 hover:bg-accent flex justify-between items-center border-b last:border-0">
+                      <div>
+                        <div className="font-medium">{p.nome}</div>
+                        <div className="text-xs text-muted-foreground">{p.codigo_barras ?? "—"} · estoque: {Number(p.estoque_atual)} {p.unidade}</div>
+                      </div>
+                      <div className="font-bold text-primary">{brl(p.preco_venda)}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="flex-1 flex flex-col">
+          <CardHeader className="py-3 flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2"><ShoppingCart className="h-4 w-4" /> Itens ({carrinho.length})</CardTitle>
+            {carrinho.length > 0 && <Button size="sm" variant="ghost" onClick={limpar}><X className="h-4 w-4 mr-1" /> Cancelar venda</Button>}
+          </CardHeader>
+          <CardContent className="flex-1 overflow-auto">
+            {carrinho.length === 0 ? (
+              <div className="text-center text-muted-foreground py-16">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Nenhum item. Bipe um código de barras ou busque um produto.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {carrinho.map((it) => (
+                  <div key={it.produto_id} className="flex items-center gap-3 p-3 border rounded-md hover:bg-accent/30">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{it.produto_nome}</div>
+                      <div className="text-xs text-muted-foreground">{brl(it.preco_unitario)} / {it.unidade}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade - 1)}><Minus className="h-3 w-3" /></Button>
+                      <Input type="number" step="0.001" value={it.quantidade}
+                        onChange={(e) => setQtd(it.produto_id, Number(e.target.value))}
+                        className="w-16 h-8 text-center" />
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade + 1)}><Plus className="h-3 w-3" /></Button>
+                    </div>
+                    <div className="w-24 text-right font-bold">{brl(it.quantidade * it.preco_unitario)}</div>
+                    <Button size="icon" variant="ghost" onClick={() => remover(it.produto_id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lado direito: resumo + finalizar */}
+      <Card className="h-fit lg:sticky lg:top-20" style={{ background: "var(--gradient-primary)" }}>
+        <CardContent className="p-5 text-primary-foreground space-y-4">
+          <div>
+            <Label className="text-primary-foreground/80 text-xs uppercase tracking-wider">Cliente (opcional)</Label>
+            <Select value={cliente_id || "none"} onValueChange={(v) => setClienteId(v === "none" ? "" : v)}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-primary-foreground"><User className="h-4 w-4 mr-1" /><SelectValue placeholder="Consumidor" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Consumidor (sem cadastro)</SelectItem>
+                {clientes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome} {c.permite_fiado ? "📒" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {clienteSel && clienteSel.permite_fiado && (
+              <p className="text-xs mt-1 text-primary-foreground/80">
+                Devedor atual: {brl(clienteSel.saldo_devedor)} / Limite: {brl(clienteSel.limite_credito)}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-white/20">
+            <div className="flex justify-between text-sm"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
+            <div className="flex justify-between items-center text-sm">
+              <span>Desconto</span>
+              <Input type="number" step="0.01" value={desconto} onChange={(e) => setDesconto(e.target.value)}
+                className="w-24 h-7 text-right bg-white/10 border-white/20 text-primary-foreground" />
+            </div>
+            <div className="flex justify-between items-baseline pt-2 border-t border-white/20">
+              <span className="text-lg">TOTAL</span>
+              <span className="text-4xl font-bold tabular-nums">{brl(total)}</span>
+            </div>
+          </div>
+
+          <Button size="lg" className="w-full bg-white text-primary hover:bg-white/90 h-14 text-lg font-bold" disabled={carrinho.length === 0}
+            onClick={() => { setValorRecebido(String(total.toFixed(2))); setPagOpen(true); }}>
+            FINALIZAR VENDA (F2)
+          </Button>
+
+          <p className="text-[10px] text-center text-primary-foreground/70">Atalhos: Enter adiciona produto · F2 finaliza</p>
+        </CardContent>
+      </Card>
+
+      {/* Modal de pagamento */}
+      <Dialog open={pagOpen} onOpenChange={setPagOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Pagamento</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-3 rounded-md flex justify-between items-baseline">
+              <span className="text-sm">Total a pagar</span><span className="text-3xl font-bold text-primary">{brl(total)}</span>
+            </div>
+
+            <div>
+              <Label>Forma de pagamento</Label>
+              <div className="grid grid-cols-5 gap-2 mt-1">
+                {(["dinheiro", "debito", "credito", "pix", "fiado"] as Forma[]).map((f) => (
+                  <Button key={f} type="button" variant={forma === f ? "default" : "outline"}
+                    onClick={() => setForma(f)} className="flex-col h-auto py-2 gap-1">
+                    {formaIcon[f]}<span className="text-[10px] capitalize">{f}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {forma === "dinheiro" && (
+              <div>
+                <Label>Valor recebido</Label>
+                <Input type="number" step="0.01" value={valorRecebido} onChange={(e) => setValorRecebido(e.target.value)} className="text-lg h-11" autoFocus />
+                <div className="flex justify-between mt-2 text-sm">
+                  <span>Troco</span>
+                  <span className="font-bold text-success text-lg">{brl(troco)}</span>
+                </div>
+              </div>
+            )}
+
+            {forma === "fiado" && (
+              <div className="bg-warning/10 border border-warning/40 p-3 rounded-md text-sm">
+                {clienteSel ? (
+                  clienteSel.permite_fiado
+                    ? <>Será adicionado <strong>{brl(total)}</strong> ao saldo de <strong>{clienteSel.nome}</strong>. Novo saldo: <strong>{brl(Number(clienteSel.saldo_devedor) + total)}</strong></>
+                    : <span className="text-destructive">Este cliente não tem fiado liberado. Edite o cadastro.</span>
+                ) : <span className="text-destructive">Selecione um cliente para venda fiada.</span>}
+              </div>
+            )}
+
+            <div><Label>Observações</Label><Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPagOpen(false)}>Voltar</Button>
+            <Button onClick={() => finalizar.mutate()} disabled={finalizar.isPending} size="lg">Confirmar venda</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cupom impresso */}
+      <Dialog open={!!cupomFinal} onOpenChange={(v) => { if (!v) setCupomFinal(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Venda concluída — Cupom #{cupomFinal?.numero_cupom}</DialogTitle></DialogHeader>
+          {cupomFinal && <CupomVenda venda={cupomFinal} />}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCupomFinal(null)}>Fechar</Button>
+            <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimir cupom</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
