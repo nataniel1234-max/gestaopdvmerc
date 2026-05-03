@@ -479,9 +479,9 @@ function DialogHistorico({ open, onOpenChange, caixas, onPrint }: { open: boolea
 function DialogGuia({ caixa, onClose, movimentacoes, vendas, recebimentosFiado }: {
   caixa: CaixaCompleto | null;
   onClose: () => void;
-  movimentacoes?: never;
-  vendas?: never;
-  recebimentosFiado?: never;
+  movimentacoes?: React.ComponentProps<typeof GuiaCaixa>["movimentacoes"];
+  vendas?: React.ComponentProps<typeof GuiaCaixa>["vendas"];
+  recebimentosFiado?: React.ComponentProps<typeof GuiaCaixa>["recebimentosFiado"];
 }) {
   return (
     <Dialog open={!!caixa} onOpenChange={(v) => !v && onClose()}>
