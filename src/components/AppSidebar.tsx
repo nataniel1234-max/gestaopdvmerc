@@ -26,8 +26,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const operacao = [
-  { title: "PDV — Caixa", url: "/pdv", icon: ShoppingCart },
+type NavItem = {
+  title: string;
+  url: string;
+  icon: typeof ShoppingCart;
+  external?: boolean;
+};
+
+const operacao: NavItem[] = [
+  { title: "PDV — Caixa (nova janela)", url: "/pdv", icon: ShoppingCart, external: true },
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
 ];
