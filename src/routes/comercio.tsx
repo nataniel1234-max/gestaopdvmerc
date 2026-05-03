@@ -330,6 +330,9 @@ function CupomTab({ comercioId }: { comercioId: string }) {
     queryFn: async () => (await supabase.from("comercio_cupom_config").select("*").maybeSingle()).data,
   });
 
+  const [form, setForm] = useState<{ mostrar_cnpj: boolean; mostrar_endereco: boolean; mostrar_telefone: boolean } | null>(null);
+  if (data && !form) setForm({ mostrar_cnpj: data.mostrar_cnpj, mostrar_endereco: data.mostrar_endereco, mostrar_telefone: data.mostrar_telefone });
+
   const save = useMutation({
     mutationFn: async (fd: FormData) => {
       const payload = {
@@ -338,9 +341,9 @@ function CupomTab({ comercioId }: { comercioId: string }) {
         serie: String(fd.get("serie") || "001"),
         proximo_numero: Number(fd.get("proximo_numero") || 1),
         mensagem_promocional: String(fd.get("mensagem_promocional") || "") || null,
-        mostrar_cnpj: fd.get("mostrar_cnpj") === "on",
-        mostrar_endereco: fd.get("mostrar_endereco") === "on",
-        mostrar_telefone: fd.get("mostrar_telefone") === "on",
+        mostrar_cnpj: form?.mostrar_cnpj ?? true,
+        mostrar_endereco: form?.mostrar_endereco ?? true,
+        mostrar_telefone: form?.mostrar_telefone ?? true,
       };
       if (data?.id) {
         const { error } = await supabase.from("comercio_cupom_config").update(payload).eq("id", data.id);
@@ -357,7 +360,7 @@ function CupomTab({ comercioId }: { comercioId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!data) return <div className="text-sm text-muted-foreground">Carregando...</div>;
+  if (!data || !form) return <div className="text-sm text-muted-foreground">Carregando...</div>;
 
   return (
     <Card>
@@ -375,12 +378,12 @@ function CupomTab({ comercioId }: { comercioId: string }) {
             <div><Label>Próximo número</Label><Input name="proximo_numero" type="number" defaultValue={data.proximo_numero} required /></div>
           </div>
           <div className="grid gap-2 pt-2">
-            <label className="flex items-center justify-between rounded-md border p-3"><span className="text-sm">Mostrar CNPJ no cupom</span>
-              <Switch defaultChecked={data.mostrar_cnpj} onCheckedChange={() => {}} name="mostrar_cnpj" /></label>
-            <label className="flex items-center justify-between rounded-md border p-3"><span className="text-sm">Mostrar endereço</span>
-              <Switch defaultChecked={data.mostrar_endereco} onCheckedChange={() => {}} name="mostrar_endereco" /></label>
-            <label className="flex items-center justify-between rounded-md border p-3"><span className="text-sm">Mostrar telefone</span>
-              <Switch defaultChecked={data.mostrar_telefone} onCheckedChange={() => {}} name="mostrar_telefone" /></label>
+            <div className="flex items-center justify-between rounded-md border p-3"><span className="text-sm">Mostrar CNPJ no cupom</span>
+              <Switch checked={form.mostrar_cnpj} onCheckedChange={(v) => setForm({ ...form, mostrar_cnpj: v })} /></div>
+            <div className="flex items-center justify-between rounded-md border p-3"><span className="text-sm">Mostrar endereço</span>
+              <Switch checked={form.mostrar_endereco} onCheckedChange={(v) => setForm({ ...form, mostrar_endereco: v })} /></div>
+            <div className="flex items-center justify-between rounded-md border p-3"><span className="text-sm">Mostrar telefone</span>
+              <Switch checked={form.mostrar_telefone} onCheckedChange={(v) => setForm({ ...form, mostrar_telefone: v })} /></div>
           </div>
           <Button type="submit" disabled={save.isPending}><Save className="h-4 w-4 mr-1" /> Salvar configuração</Button>
         </form>
