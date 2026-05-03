@@ -214,7 +214,8 @@ function CaixaPage() {
           obs={obsAbertura} setObs={setObsAbertura}
           onConfirm={() => abrir.mutate()} loading={abrir.isPending} />
 
-        <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} />
+        <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} onPrint={(c) => setGuiaCaixa(c)} />
+        <DialogGuia caixa={guiaCaixa} onClose={() => setGuiaCaixa(null)} />
       </div>
     );
   }
@@ -363,7 +364,8 @@ function CaixaPage() {
         </DialogContent>
       </Dialog>
 
-      <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} />
+      <DialogHistorico open={openHist} onOpenChange={setOpenHist} caixas={caixasFechados} onPrint={(c) => setGuiaCaixa(c)} />
+      <DialogGuia caixa={guiaCaixa} onClose={() => setGuiaCaixa(null)} movimentacoes={movimentacoes as any} vendas={vendas as any} recebimentosFiado={recebimentosFiado as any} />
     </div>
   );
 }
