@@ -10,7 +10,7 @@ import {
   Receipt,
   CreditCard,
   Store,
-  Wallet,
+  FileBarChart,
   FileBarChart,
   Settings,
 } from "lucide-react";
