@@ -159,7 +159,7 @@ function CaixaPage() {
       const informado = Number(valorFechado || 0);
       const calculado = resumo.saldoDinheiro;
       const dif = informado - calculado;
-      const { error } = await supabase.from("caixas").update({
+      const { data, error } = await supabase.from("caixas").update({
         status: "fechado",
         valor_fechamento_informado: informado,
         valor_fechamento_calculado: calculado,
@@ -176,12 +176,14 @@ function CaixaPage() {
         qtd_vendas: resumo.qtd,
         observacoes_fechamento: obsFechamento || null,
         fechado_em: new Date().toISOString(),
-      }).eq("id", caixa.id);
+      }).eq("id", caixa.id).select().single();
       if (error) throw error;
+      return data as CaixaCompleto;
     },
-    onSuccess: () => {
+    onSuccess: (caixaFechado) => {
       toast.success("Caixa fechado!");
       setOpenFechar(false); setValorFechado(""); setObsFechamento("");
+      setGuiaCaixa(caixaFechado);
       qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
       qc.invalidateQueries({ queryKey: ["caixas-fechados"] });
     },
