@@ -388,16 +388,6 @@ function PDVPage() {
             <div className="text-[10px] text-muted-foreground bg-muted p-2 rounded font-mono">
               <strong>Atalhos:</strong> D=Dinheiro · P=PIX · X=Débito · C=Crédito · F=Fiado · Enter/F4=Confirmar · Esc=Cancelar
             </div>
-              <div className="bg-warning/10 border border-warning/40 p-3 rounded-md text-sm">
-                {clienteSel ? (
-                  clienteSel.permite_fiado
-                    ? <>Será adicionado <strong>{brl(total)}</strong> ao saldo de <strong>{clienteSel.nome}</strong>. Novo saldo: <strong>{brl(Number(clienteSel.saldo_devedor) + total)}</strong></>
-                    : <span className="text-destructive">Este cliente não tem fiado liberado. Edite o cadastro.</span>
-                ) : <span className="text-destructive">Selecione um cliente para venda fiada.</span>}
-              </div>
-            )}
-
-            <div><Label>Observações</Label><Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPagOpen(false)}>Voltar</Button>
