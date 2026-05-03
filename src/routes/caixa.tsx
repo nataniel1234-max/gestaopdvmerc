@@ -35,6 +35,7 @@ function CaixaPage() {
   const [openFechar, setOpenFechar] = useState(false);
   const [openMov, setOpenMov] = useState<null | "sangria" | "suprimento" | "despesa">(null);
   const [openHist, setOpenHist] = useState(false);
+  const [guiaCaixa, setGuiaCaixa] = useState<CaixaCompleto | null>(null);
 
   // Form abrir
   const [operador, setOperador] = useState("");
