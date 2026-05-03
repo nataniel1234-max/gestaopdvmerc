@@ -18,6 +18,7 @@ import { Route as FornecedoresRouteImport } from './routes/fornecedores'
 import { Route as FiadoRouteImport } from './routes/fiado'
 import { Route as EntradasRouteImport } from './routes/entradas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as ComercioRouteImport } from './routes/comercio'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CaixaRouteImport } from './routes/caixa'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -68,6 +69,11 @@ const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComercioRoute = ComercioRouteImport.update({
+  id: '/comercio',
+  path: '/comercio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientesRoute = ClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/caixa': typeof CaixaRoute
   '/clientes': typeof ClientesRoute
+  '/comercio': typeof ComercioRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/entradas': typeof EntradasRoute
   '/fiado': typeof FiadoRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/caixa': typeof CaixaRoute
   '/clientes': typeof ClientesRoute
+  '/comercio': typeof ComercioRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/entradas': typeof EntradasRoute
   '/fiado': typeof FiadoRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/caixa': typeof CaixaRoute
   '/clientes': typeof ClientesRoute
+  '/comercio': typeof ComercioRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/entradas': typeof EntradasRoute
   '/fiado': typeof FiadoRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/caixa'
     | '/clientes'
+    | '/comercio'
     | '/configuracoes'
     | '/entradas'
     | '/fiado'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/caixa'
     | '/clientes'
+    | '/comercio'
     | '/configuracoes'
     | '/entradas'
     | '/fiado'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/caixa'
     | '/clientes'
+    | '/comercio'
     | '/configuracoes'
     | '/entradas'
     | '/fiado'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CaixaRoute: typeof CaixaRoute
   ClientesRoute: typeof ClientesRoute
+  ComercioRoute: typeof ComercioRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   EntradasRoute: typeof EntradasRoute
   FiadoRoute: typeof FiadoRoute
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comercio': {
+      id: '/comercio'
+      path: '/comercio'
+      fullPath: '/comercio'
+      preLoaderRoute: typeof ComercioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clientes': {
       id: '/clientes'
       path: '/clientes'
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CaixaRoute: CaixaRoute,
   ClientesRoute: ClientesRoute,
+  ComercioRoute: ComercioRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   EntradasRoute: EntradasRoute,
   FiadoRoute: FiadoRoute,

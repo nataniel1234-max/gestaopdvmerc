@@ -12,6 +12,7 @@ import {
   Store,
   FileBarChart,
   Settings,
+  Building2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,7 +54,8 @@ const movimentos = [
 ];
 
 const sistema = [
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Meu Comércio", url: "/comercio", icon: Building2 },
+  { title: "Impressão", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
