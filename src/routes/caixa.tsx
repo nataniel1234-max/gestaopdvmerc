@@ -55,7 +55,7 @@ function CaixaPage() {
   const { data: caixa } = useQuery({
     queryKey: ["caixa-aberto"],
     queryFn: async () => (await supabase.from("caixas").select("*").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle()).data,
-    refetchInterval: 5000,
+    staleTime: 60_000,
   });
 
   const { data: vendas = [] } = useQuery({
