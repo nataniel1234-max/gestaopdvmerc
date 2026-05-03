@@ -114,12 +114,15 @@ function PDVPage() {
       }
       if (forma === "dinheiro" && Number(valorRecebido) < total) throw new Error("Valor recebido insuficiente");
 
+      const caixa_id = await exigirCaixaAberto();
+
       const { data: venda, error } = await supabase.from("vendas").insert({
         cliente_id: cliente_id || null,
         forma_pagamento: forma,
         subtotal, desconto: Number(desconto || 0), total,
         valor_recebido: forma === "dinheiro" ? Number(valorRecebido) : total,
         troco, observacoes: observacoes || null,
+        caixa_id,
       }).select("*, clientes(nome)").single();
       if (error) throw error;
 
