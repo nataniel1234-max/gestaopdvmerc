@@ -27,6 +27,7 @@ import {
 
 const operacao = [
   { title: "PDV — Caixa", url: "/pdv", icon: ShoppingCart },
+  { title: "Controle de Caixa", url: "/caixa", icon: Wallet },
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
 ];
 
