@@ -8,10 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, DoorClosed } from "lucide-react";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
+import { exigirCaixaAberto } from "@/lib/caixa";
+import { Link } from "@tanstack/react-router";
 import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -51,6 +53,11 @@ function PDVPage() {
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-pdv"],
     queryFn: async () => (await supabase.from("clientes").select("id, nome, permite_fiado, limite_credito, saldo_devedor").eq("ativo", true).order("nome")).data ?? [],
+  });
+  const { data: caixaAberto } = useQuery({
+    queryKey: ["caixa-aberto"],
+    queryFn: async () => (await supabase.from("caixas").select("id, aberto_em, operador").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle()).data,
+    refetchInterval: 5000,
   });
 
   const clienteSel = clientes.find((c) => c.id === cliente_id);
@@ -107,12 +114,15 @@ function PDVPage() {
       }
       if (forma === "dinheiro" && Number(valorRecebido) < total) throw new Error("Valor recebido insuficiente");
 
+      const caixa_id = await exigirCaixaAberto();
+
       const { data: venda, error } = await supabase.from("vendas").insert({
         cliente_id: cliente_id || null,
         forma_pagamento: forma,
         subtotal, desconto: Number(desconto || 0), total,
         valor_recebido: forma === "dinheiro" ? Number(valorRecebido) : total,
         troco, observacoes: observacoes || null,
+        caixa_id,
       }).select("*, clientes(nome)").single();
       if (error) throw error;
 
@@ -133,6 +143,11 @@ function PDVPage() {
           .eq("id", clienteSel.id);
       }
 
+      await supabase.from("movimentacoes_caixa").insert({
+        caixa_id, tipo: "venda", forma_pagamento: forma, valor: total,
+        descricao: `Venda #${venda.numero_cupom}`, referencia_id: venda.id,
+      });
+
       const { data: completa } = await supabase.from("vendas")
         .select("*, clientes(nome), itens_venda(*)").eq("id", venda.id).single();
       return completa as VendaCompleta;
@@ -144,6 +159,8 @@ function PDVPage() {
       setPagOpen(false); setForma("dinheiro");
       qc.invalidateQueries({ queryKey: ["produtos-pdv"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["caixa-vendas"] });
+      qc.invalidateQueries({ queryKey: ["caixa-movs"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -152,6 +169,21 @@ function PDVPage() {
     dinheiro: <Banknote className="h-4 w-4" />, debito: <CreditCard className="h-4 w-4" />,
     credito: <CreditCard className="h-4 w-4" />, pix: <Smartphone className="h-4 w-4" />, fiado: <BookOpen className="h-4 w-4" />,
   };
+
+  if (!caixaAberto) {
+    return (
+      <div className="max-w-2xl mx-auto mt-12">
+        <Card style={{ background: "var(--gradient-primary)" }}>
+          <CardContent className="p-8 text-center text-primary-foreground">
+            <DoorClosed className="h-16 w-16 mx-auto mb-4 opacity-80" />
+            <h2 className="text-2xl font-bold mb-2">Caixa fechado</h2>
+            <p className="opacity-90 mb-6">É necessário abrir o caixa antes de iniciar vendas no PDV.</p>
+            <Link to="/caixa"><Button size="lg" className="bg-white text-primary hover:bg-white/90">Ir para Controle de Caixa</Button></Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-4 -mx-4 md:-mx-6 px-4 md:px-6 -my-4 md:-my-6 py-4 md:py-6 min-h-[calc(100vh-3.5rem)]">
