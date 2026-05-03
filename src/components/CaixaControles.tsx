@@ -337,9 +337,9 @@ export function CaixaControles({ compact = false }: { compact?: boolean }) {
       <DialogGuia
         caixa={guiaCaixa}
         onClose={() => setGuiaCaixa(null)}
-        movimentacoes={movimentacoes as never}
-        vendas={vendas as never}
-        recebimentosFiado={recebimentosFiado as never}
+        movimentacoes={movimentacoes as React.ComponentProps<typeof GuiaCaixa>["movimentacoes"]}
+        vendas={vendas as React.ComponentProps<typeof GuiaCaixa>["vendas"]}
+        recebimentosFiado={recebimentosFiado as React.ComponentProps<typeof GuiaCaixa>["recebimentosFiado"]}
       />
     </>
   );
