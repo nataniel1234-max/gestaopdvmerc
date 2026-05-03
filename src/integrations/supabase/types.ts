@@ -162,6 +162,144 @@ export type Database = {
           },
         ]
       }
+      comercio_cupom_config: {
+        Row: {
+          cabecalho: string | null
+          comercio_id: string
+          created_at: string
+          id: string
+          mensagem_promocional: string | null
+          mostrar_cnpj: boolean
+          mostrar_endereco: boolean
+          mostrar_telefone: boolean
+          proximo_numero: number
+          rodape: string | null
+          serie: string
+          updated_at: string
+        }
+        Insert: {
+          cabecalho?: string | null
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          mensagem_promocional?: string | null
+          mostrar_cnpj?: boolean
+          mostrar_endereco?: boolean
+          mostrar_telefone?: boolean
+          proximo_numero?: number
+          rodape?: string | null
+          serie?: string
+          updated_at?: string
+        }
+        Update: {
+          cabecalho?: string | null
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          mensagem_promocional?: string | null
+          mostrar_cnpj?: boolean
+          mostrar_endereco?: boolean
+          mostrar_telefone?: boolean
+          proximo_numero?: number
+          rodape?: string | null
+          serie?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercio_cupom_config_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: true
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercio_formas_pagamento: {
+        Row: {
+          ativo: boolean
+          comercio_id: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          prazo_recebimento_dias: number
+          taxa_percentual: number
+          tipo_base: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          prazo_recebimento_dias?: number
+          taxa_percentual?: number
+          tipo_base: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          prazo_recebimento_dias?: number
+          taxa_percentual?: number
+          tipo_base?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercio_formas_pagamento_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercio_naturezas_lancamento: {
+        Row: {
+          ativo: boolean
+          comercio_id: string
+          created_at: string
+          descricao: string
+          id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          descricao: string
+          id?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercio_naturezas_lancamento_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comercios: {
         Row: {
           created_at: string
@@ -786,6 +924,10 @@ export type Database = {
       is_member_of: {
         Args: { _comercio_id: string; _user_id: string }
         Returns: boolean
+      }
+      seed_comercio_defaults: {
+        Args: { _comercio_id: string }
+        Returns: undefined
       }
     }
     Enums: {
