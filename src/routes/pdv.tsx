@@ -170,6 +170,21 @@ function PDVPage() {
     credito: <CreditCard className="h-4 w-4" />, pix: <Smartphone className="h-4 w-4" />, fiado: <BookOpen className="h-4 w-4" />,
   };
 
+  if (!caixaAberto) {
+    return (
+      <div className="max-w-2xl mx-auto mt-12">
+        <Card style={{ background: "var(--gradient-primary)" }}>
+          <CardContent className="p-8 text-center text-primary-foreground">
+            <DoorClosed className="h-16 w-16 mx-auto mb-4 opacity-80" />
+            <h2 className="text-2xl font-bold mb-2">Caixa fechado</h2>
+            <p className="opacity-90 mb-6">É necessário abrir o caixa antes de iniciar vendas no PDV.</p>
+            <Link to="/caixa"><Button size="lg" className="bg-white text-primary hover:bg-white/90">Ir para Controle de Caixa</Button></Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-4 -mx-4 md:-mx-6 px-4 md:px-6 -my-4 md:-my-6 py-4 md:py-6 min-h-[calc(100vh-3.5rem)]">
       {/* Lado esquerdo: busca + carrinho */}
