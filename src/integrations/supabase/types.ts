@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      caixas: {
+        Row: {
+          aberto_em: string
+          created_at: string
+          diferenca: number | null
+          fechado_em: string | null
+          id: string
+          observacoes_abertura: string | null
+          observacoes_fechamento: string | null
+          operador: string | null
+          qtd_vendas: number
+          status: string
+          total_credito: number
+          total_debito: number
+          total_despesas: number
+          total_dinheiro: number
+          total_fiado: number
+          total_pix: number
+          total_recebimentos_fiado: number
+          total_sangrias: number
+          total_suprimentos: number
+          updated_at: string
+          valor_abertura: number
+          valor_fechamento_calculado: number | null
+          valor_fechamento_informado: number | null
+        }
+        Insert: {
+          aberto_em?: string
+          created_at?: string
+          diferenca?: number | null
+          fechado_em?: string | null
+          id?: string
+          observacoes_abertura?: string | null
+          observacoes_fechamento?: string | null
+          operador?: string | null
+          qtd_vendas?: number
+          status?: string
+          total_credito?: number
+          total_debito?: number
+          total_despesas?: number
+          total_dinheiro?: number
+          total_fiado?: number
+          total_pix?: number
+          total_recebimentos_fiado?: number
+          total_sangrias?: number
+          total_suprimentos?: number
+          updated_at?: string
+          valor_abertura?: number
+          valor_fechamento_calculado?: number | null
+          valor_fechamento_informado?: number | null
+        }
+        Update: {
+          aberto_em?: string
+          created_at?: string
+          diferenca?: number | null
+          fechado_em?: string | null
+          id?: string
+          observacoes_abertura?: string | null
+          observacoes_fechamento?: string | null
+          operador?: string | null
+          qtd_vendas?: number
+          status?: string
+          total_credito?: number
+          total_debito?: number
+          total_despesas?: number
+          total_dinheiro?: number
+          total_fiado?: number
+          total_pix?: number
+          total_recebimentos_fiado?: number
+          total_sangrias?: number
+          total_suprimentos?: number
+          updated_at?: string
+          valor_abertura?: number
+          valor_fechamento_calculado?: number | null
+          valor_fechamento_informado?: number | null
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -191,6 +269,51 @@ export type Database = {
           },
         ]
       }
+      movimentacoes_caixa: {
+        Row: {
+          caixa_id: string
+          created_at: string
+          descricao: string | null
+          forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
+          id: string
+          referencia_id: string | null
+          tipo: Database["public"]["Enums"]["tipo_mov_caixa"]
+          valor: number
+        }
+        Insert: {
+          caixa_id: string
+          created_at?: string
+          descricao?: string | null
+          forma_pagamento?:
+            | Database["public"]["Enums"]["forma_pagamento"]
+            | null
+          id?: string
+          referencia_id?: string | null
+          tipo: Database["public"]["Enums"]["tipo_mov_caixa"]
+          valor: number
+        }
+        Update: {
+          caixa_id?: string
+          created_at?: string
+          descricao?: string | null
+          forma_pagamento?:
+            | Database["public"]["Enums"]["forma_pagamento"]
+            | null
+          id?: string
+          referencia_id?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_mov_caixa"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_caixa_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "caixas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes_estoque: {
         Row: {
           created_at: string
@@ -281,6 +404,7 @@ export type Database = {
       }
       pagamentos_fiado: {
         Row: {
+          caixa_id: string | null
           cliente_id: string
           created_at: string
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
@@ -289,6 +413,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          caixa_id?: string | null
           cliente_id: string
           created_at?: string
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
@@ -297,6 +422,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          caixa_id?: string | null
           cliente_id?: string
           created_at?: string
           forma_pagamento?: Database["public"]["Enums"]["forma_pagamento"]
@@ -305,6 +431,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "pagamentos_fiado_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "caixas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pagamentos_fiado_cliente_id_fkey"
             columns: ["cliente_id"]
@@ -375,6 +508,7 @@ export type Database = {
       }
       vendas: {
         Row: {
+          caixa_id: string | null
           cancelada: boolean
           cliente_id: string | null
           created_at: string
@@ -389,6 +523,7 @@ export type Database = {
           valor_recebido: number | null
         }
         Insert: {
+          caixa_id?: string | null
           cancelada?: boolean
           cliente_id?: string | null
           created_at?: string
@@ -403,6 +538,7 @@ export type Database = {
           valor_recebido?: number | null
         }
         Update: {
+          caixa_id?: string | null
           cancelada?: boolean
           cliente_id?: string | null
           created_at?: string
@@ -418,6 +554,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "vendas_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "caixas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -431,7 +574,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      caixa_aberto: { Args: never; Returns: string }
     }
     Enums: {
       forma_pagamento: "dinheiro" | "debito" | "credito" | "pix" | "fiado"
@@ -450,6 +593,14 @@ export type Database = {
         | "saida_troca"
         | "saida_perda"
         | "ajuste"
+      tipo_mov_caixa:
+        | "abertura"
+        | "sangria"
+        | "suprimento"
+        | "despesa"
+        | "venda"
+        | "recebimento_fiado"
+        | "fechamento"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -594,6 +745,15 @@ export const Constants = {
         "saida_troca",
         "saida_perda",
         "ajuste",
+      ],
+      tipo_mov_caixa: [
+        "abertura",
+        "sangria",
+        "suprimento",
+        "despesa",
+        "venda",
+        "recebimento_fiado",
+        "fechamento",
       ],
     },
   },
