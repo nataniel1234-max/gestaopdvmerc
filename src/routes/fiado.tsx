@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { exigirCaixaAberto } from "@/lib/caixa";
 import { ReciboFiado, type ReciboFiadoData } from "@/components/ReciboFiado";
+import { imprimirDocumento } from "@/lib/print-config";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -245,7 +246,7 @@ function FiadoPage() {
           {recibo && <ReciboFiado data={recibo} />}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setRecibo(null)}>Fechar</Button>
-            <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimir recibo</Button>
+            <Button onClick={() => imprimirDocumento("recibo")}><Printer className="h-4 w-4 mr-1" /> Imprimir recibo</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

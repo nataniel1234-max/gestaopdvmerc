@@ -1,4 +1,5 @@
 import { brl, dt } from "@/lib/format";
+import { usePrintConfig } from "@/lib/print-config";
 
 export type CaixaCompleto = {
   id: string;
@@ -51,11 +52,13 @@ export function GuiaCaixa({
   vendas?: VendaItem[];
   recebimentosFiado?: Array<{ id: string; created_at: string; valor: number | string; forma_pagamento: string; clientes?: { nome: string } | null }>;
 }) {
+  const cfg = usePrintConfig().guia;
   const dif = Number(caixa.diferenca ?? 0);
   return (
-    <div id="guia-print" className="font-mono text-xs bg-white text-black p-3 max-w-[80mm] mx-auto border">
-      <div className="text-center font-bold text-sm">MERCADINHO</div>
-      <div className="text-center text-[10px] mb-2">FECHAMENTO DE CAIXA</div>
+    <div id="guia-print" className="font-mono text-xs bg-white text-black p-3 mx-auto border" style={{ maxWidth: `${cfg.largura_mm}mm`, width: "100%" }}>
+      {cfg.mostrar_cabecalho && cfg.cabecalho && (
+        <div className="text-center font-bold text-[11px] whitespace-pre-line mb-1">{cfg.cabecalho}</div>
+      )}
       <div className="border-y border-dashed border-black py-1 mb-2 text-[10px]">
         <div>Caixa: {caixa.id.slice(0, 8)}</div>
         <div>Operador: {caixa.operador ?? "—"}</div>
@@ -137,6 +140,9 @@ export function GuiaCaixa({
       <div className="text-center text-[10px] mt-3">
         <div className="border-t border-black mt-8 pt-1">Assinatura do operador</div>
       </div>
+      {cfg.mostrar_rodape && cfg.rodape && (
+        <div className="text-center text-[10px] mt-2 whitespace-pre-line">{cfg.rodape}</div>
+      )}
       <div className="text-center text-[9px] mt-2 opacity-70">{dt(new Date())}</div>
     </div>
   );

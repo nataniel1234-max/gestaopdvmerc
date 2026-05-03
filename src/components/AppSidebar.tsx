@@ -12,6 +12,7 @@ import {
   Store,
   Wallet,
   FileBarChart,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,10 @@ const movimentos = [
   { title: "Saída / Perda", url: "/saidas", icon: ArrowUpFromLine },
   { title: "Vendas", url: "/vendas", icon: Receipt },
   { title: "Fiado / Crediário", url: "/fiado", icon: CreditCard },
+];
+
+const sistema = [
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -91,6 +96,7 @@ export function AppSidebar() {
         <Section label="Operação" items={operacao} />
         <Section label="Cadastros" items={cadastros} />
         <Section label="Movimentos" items={movimentos} />
+        <Section label="Sistema" items={sistema} />
       </SidebarContent>
     </Sidebar>
   );

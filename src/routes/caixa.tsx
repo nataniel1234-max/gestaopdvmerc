@@ -19,6 +19,7 @@ import {
   CreditCard, BookOpen, AlertTriangle, Printer, History,
 } from "lucide-react";
 import { GuiaCaixa, type CaixaCompleto } from "@/components/GuiaCaixa";
+import { imprimirDocumento } from "@/lib/print-config";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -535,7 +536,7 @@ function DialogGuia({
         )}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>Fechar</Button>
-          <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimir guia</Button>
+          <Button onClick={() => imprimirDocumento("guia")}><Printer className="h-4 w-4 mr-1" /> Imprimir guia</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

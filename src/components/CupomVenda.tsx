@@ -1,4 +1,5 @@
 import { brl, dt } from "@/lib/format";
+import { usePrintConfig } from "@/lib/print-config";
 
 export type VendaCompleta = {
   id: string;
@@ -26,10 +27,14 @@ const formaPagLabel: Record<string, string> = {
 };
 
 export function CupomVenda({ venda }: { venda: VendaCompleta }) {
+  const cfg = usePrintConfig().cupom;
+  const maxW = `${cfg.largura_mm}mm`;
   return (
-    <div id="cupom-print" className="font-mono text-xs bg-white text-black p-3 max-w-[80mm] mx-auto border">
-      <div className="text-center font-bold text-sm mb-1">MERCADINHO</div>
-      <div className="text-center text-[10px] mb-2">CUPOM NAO FISCAL</div>
+    <div id="cupom-print" className="font-mono text-xs bg-white text-black p-3 mx-auto border" style={{ maxWidth: maxW, width: "100%" }}>
+      {cfg.mostrar_cabecalho && cfg.cabecalho && (
+        <div className="text-center text-[11px] whitespace-pre-line font-bold mb-1">{cfg.cabecalho}</div>
+      )}
+      <div className="text-center text-[10px] mb-1">CUPOM NAO FISCAL</div>
       <div className="text-[10px] text-center border-y border-dashed border-black py-1 mb-2">
         Cupom #{venda.numero_cupom} — {dt(venda.created_at)}
       </div>
@@ -68,11 +73,12 @@ export function CupomVenda({ venda }: { venda: VendaCompleta }) {
         </>)}
       </div>
 
-      <div className="border-t border-dashed border-black my-2" />
-      <div className="text-center text-[10px] mt-2">
-        OBRIGADO E VOLTE SEMPRE!<br />
-        *** SEM VALOR FISCAL ***
-      </div>
+      {cfg.mostrar_rodape && cfg.rodape && (
+        <>
+          <div className="border-t border-dashed border-black my-2" />
+          <div className="text-center text-[10px] mt-2 whitespace-pre-line">{cfg.rodape}</div>
+        </>
+      )}
     </div>
   );
 }

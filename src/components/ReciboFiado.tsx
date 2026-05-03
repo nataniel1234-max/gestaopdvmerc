@@ -1,4 +1,5 @@
 import { brl, dt } from "@/lib/format";
+import { usePrintConfig } from "@/lib/print-config";
 
 export type ReciboFiadoData = {
   numero?: string;
@@ -12,10 +13,12 @@ export type ReciboFiadoData = {
 };
 
 export function ReciboFiado({ data }: { data: ReciboFiadoData }) {
+  const cfg = usePrintConfig().recibo;
   return (
-    <div id="recibo-print" className="font-mono text-xs bg-white text-black p-4 max-w-[80mm] mx-auto border">
-      <div className="text-center font-bold text-sm">MERCADINHO</div>
-      <div className="text-center text-[10px] mb-2">RECIBO DE PAGAMENTO — FIADO</div>
+    <div id="recibo-print" className="font-mono text-xs bg-white text-black p-4 mx-auto border" style={{ maxWidth: `${cfg.largura_mm}mm`, width: "100%" }}>
+      {cfg.mostrar_cabecalho && cfg.cabecalho && (
+        <div className="text-center font-bold text-[11px] whitespace-pre-line mb-1">{cfg.cabecalho}</div>
+      )}
       <div className="border-y border-dashed border-black py-1 text-[10px] mb-2">
         {data.numero && <div>Recibo Nº: {data.numero}</div>}
         <div>Data: {dt(data.data)}</div>
@@ -63,6 +66,10 @@ export function ReciboFiado({ data }: { data: ReciboFiadoData }) {
         <div className="border-t border-black pt-1">Recebedor</div>
         <div className="border-t border-black pt-1">Cliente</div>
       </div>
+
+      {cfg.mostrar_rodape && cfg.rodape && (
+        <div className="text-center text-[10px] mt-3 whitespace-pre-line">{cfg.rodape}</div>
+      )}
     </div>
   );
 }
