@@ -15,6 +15,7 @@ import { aplicarMovimentacao } from "@/lib/estoque";
 import { exigirCaixaAberto } from "@/lib/caixa";
 import { Link } from "@tanstack/react-router";
 import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
+import { imprimirDocumento } from "@/lib/print-config";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -403,7 +404,7 @@ function PDVPage() {
           {cupomFinal && <CupomVenda venda={cupomFinal} />}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCupomFinal(null)}>Fechar</Button>
-            <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimir cupom</Button>
+            <Button onClick={() => imprimirDocumento("cupom")}><Printer className="h-4 w-4 mr-1" /> Imprimir cupom</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

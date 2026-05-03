@@ -157,10 +157,13 @@
   #guia-print, #guia-print *,
   #recibo-print, #recibo-print * { visibility: visible; }
   #cupom-print, #guia-print, #recibo-print {
-    position: absolute; left: 0; top: 0; width: 80mm;
+    position: absolute; left: 0; top: 0;
+    width: var(--print-largura-mm, 80mm);
+    max-width: var(--print-largura-mm, 80mm) !important;
     font-family: 'Courier New', monospace; color: #000; background: #fff;
     padding: 4mm; font-size: 11px; line-height: 1.35;
+    border: 0 !important;
   }
-  @page { size: 80mm auto; margin: 0; }
+  @page { size: var(--print-largura-mm, 80mm) auto; margin: 0; }
 }
 
