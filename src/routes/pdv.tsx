@@ -210,24 +210,40 @@ function PDVPage() {
     credito: <CreditCard className="h-4 w-4" />, pix: <Smartphone className="h-4 w-4" />, fiado: <BookOpen className="h-4 w-4" />,
   };
 
-  if (!caixaAberto) {
-    return (
-      <div className="max-w-2xl mx-auto mt-12">
-        <Card style={{ background: "var(--gradient-primary)" }}>
-          <CardContent className="p-8 text-center text-primary-foreground">
-            <DoorClosed className="h-16 w-16 mx-auto mb-4 opacity-80" />
-            <h2 className="text-2xl font-bold mb-2">Caixa fechado</h2>
-            <p className="opacity-90 mb-6">É necessário abrir o caixa antes de iniciar vendas no PDV.</p>
-            <Link to="/caixa"><Button size="lg" className="bg-white text-primary hover:bg-white/90">Ir para Controle de Caixa</Button></Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid lg:grid-cols-[1fr_400px] gap-4 -mx-4 md:-mx-6 px-4 md:px-6 -my-4 md:-my-6 py-4 md:py-6 min-h-[calc(100vh-3.5rem)]">
-      {/* Lado esquerdo: busca + carrinho */}
+    <div className="flex flex-col min-h-screen">
+      {/* Barra superior do PDV (sempre visível) */}
+      <header className="h-14 flex items-center gap-3 border-b bg-card px-4 sticky top-0 z-30 print:hidden">
+        <div className="flex items-center gap-2 font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Store className="h-4 w-4" />
+          </div>
+          <span>PDV — Frente de Caixa</span>
+        </div>
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex justify-end">
+            <CaixaControles />
+          </div>
+        </div>
+        <Link to="/" className="ml-2">
+          <Button size="sm" variant="ghost"><LogOut className="h-4 w-4 mr-1" /> Sair do PDV</Button>
+        </Link>
+      </header>
+
+      {!caixaAberto ? (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-xl w-full" style={{ background: "var(--gradient-primary)" }}>
+            <CardContent className="p-8 text-center text-primary-foreground">
+              <Store className="h-16 w-16 mx-auto mb-4 opacity-80" />
+              <h2 className="text-2xl font-bold mb-2">Caixa fechado</h2>
+              <p className="opacity-90 mb-2">Para iniciar as vendas, abra o caixa pelo botão <strong>Abrir caixa</strong> na barra superior.</p>
+              <p className="text-xs opacity-80">Toda abertura, fechamento, sangria, suprimento e conferência agora são feitos aqui mesmo no PDV.</p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid lg:grid-cols-[1fr_400px] gap-4 px-4 md:px-6 py-4 md:py-6 flex-1">
+          {/* Lado esquerdo: busca + carrinho */}
       <div className="flex flex-col gap-4 min-w-0">
         <Card>
           <CardContent className="p-4">
