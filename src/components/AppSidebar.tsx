@@ -13,6 +13,7 @@ import {
   FileBarChart,
   Settings,
   Building2,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +56,7 @@ const movimentos = [
 
 const sistema = [
   { title: "Meu Comércio", url: "/comercio", icon: Building2 },
+  { title: "Importar / Exportar", url: "/importar-exportar", icon: ArrowLeftRight },
   { title: "Impressão", url: "/configuracoes", icon: Settings },
 ];
 
