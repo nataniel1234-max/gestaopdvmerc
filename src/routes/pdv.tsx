@@ -143,6 +143,11 @@ function PDVPage() {
           .eq("id", clienteSel.id);
       }
 
+      await supabase.from("movimentacoes_caixa").insert({
+        caixa_id, tipo: "venda", forma_pagamento: forma, valor: total,
+        descricao: `Venda #${venda.numero_cupom}`, referencia_id: venda.id,
+      });
+
       const { data: completa } = await supabase.from("vendas")
         .select("*, clientes(nome), itens_venda(*)").eq("id", venda.id).single();
       return completa as VendaCompleta;
