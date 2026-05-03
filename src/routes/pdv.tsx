@@ -71,6 +71,34 @@ function PDVPage() {
 
   useEffect(() => { inputBuscaRef.current?.focus(); }, []);
 
+  // Atalhos globais (quando modal de pagamento aberto)
+  useEffect(() => {
+    if (!pagOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Esc fecha modal
+      if (e.key === "Escape") { e.preventDefault(); setPagOpen(false); return; }
+      // Atalhos de forma de pagamento (Alt para não conflitar com input numérico)
+      const k = e.key.toLowerCase();
+      if (e.altKey || (e.target as HTMLElement)?.tagName !== "INPUT") {
+        if (k === "d") { e.preventDefault(); setForma("dinheiro"); }
+        else if (k === "p") { e.preventDefault(); setForma("pix"); }
+        else if (k === "x") { e.preventDefault(); setForma("debito"); }
+        else if (k === "c") { e.preventDefault(); setForma("credito"); }
+        else if (k === "f") { e.preventDefault(); setForma("fiado"); }
+      }
+      // Enter ou F4 confirma
+      if (e.key === "F4" || (e.key === "Enter" && (e.target as HTMLElement)?.tagName !== "TEXTAREA")) {
+        if (forma !== "dinheiro" || Number(valorRecebido) >= total) {
+          e.preventDefault();
+          finalizar.mutate();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagOpen, forma, valorRecebido, total]);
+
   const adicionar = (p: typeof produtos[number]) => {
     setCarrinho((prev) => {
       const ex = prev.find((x) => x.produto_id === p.id);
