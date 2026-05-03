@@ -156,8 +156,56 @@ function ProdutosPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Preço de custo</Label><Input type="number" step="0.01" value={form.preco_custo} onChange={(e) => setForm({ ...form, preco_custo: e.target.value })} /></div>
-                <div><Label>Preço de venda *</Label><Input type="number" step="0.01" value={form.preco_venda} onChange={(e) => setForm({ ...form, preco_venda: e.target.value })} /></div>
+                <div>
+                  <Label>Preço de custo</Label>
+                  <Input type="number" step="0.01" value={form.preco_custo}
+                    onChange={(e) => {
+                      const custo = e.target.value;
+                      // Mantém margem ao mudar custo, recalcula venda
+                      const c = Number(custo);
+                      const v = Number(form.preco_venda);
+                      if (c > 0 && v > 0) {
+                        // se já tem venda, mantém venda e a margem se ajusta sozinha (campo derivado)
+                        setForm({ ...form, preco_custo: custo });
+                      } else {
+                        setForm({ ...form, preco_custo: custo });
+                      }
+                    }} />
+                </div>
+                <div>
+                  <Label>Margem (%)</Label>
+                  <Input type="number" step="0.01"
+                    value={(() => {
+                      const c = Number(form.preco_custo);
+                      const v = Number(form.preco_venda);
+                      if (c > 0 && v > 0) return (((v - c) / c) * 100).toFixed(2);
+                      return "";
+                    })()}
+                    onChange={(e) => {
+                      const margem = Number(e.target.value);
+                      const c = Number(form.preco_custo);
+                      if (c > 0) {
+                        const novoV = c * (1 + margem / 100);
+                        setForm({ ...form, preco_venda: novoV.toFixed(2) });
+                      }
+                    }}
+                    placeholder="Ex: 30" />
+                </div>
+                <div>
+                  <Label>Preço de venda *</Label>
+                  <Input type="number" step="0.01" value={form.preco_venda}
+                    onChange={(e) => setForm({ ...form, preco_venda: e.target.value })} />
+                  {(() => {
+                    const c = Number(form.preco_custo);
+                    const v = Number(form.preco_venda);
+                    if (c > 0 && v > 0) {
+                      const lucro = v - c;
+                      const m = ((lucro / c) * 100).toFixed(1);
+                      return <p className="text-[10px] text-muted-foreground mt-1">Lucro: <strong>{lucro.toFixed(2)}</strong> ({m}%)</p>;
+                    }
+                    return null;
+                  })()}
+                </div>
                 <div><Label>Estoque atual</Label><Input type="number" step="0.001" value={form.estoque_atual} onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })} /></div>
                 <div><Label>Estoque mínimo</Label><Input type="number" step="0.001" value={form.estoque_minimo} onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })} /></div>
               </div>
