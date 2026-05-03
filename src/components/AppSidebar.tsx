@@ -11,7 +11,6 @@ import {
   CreditCard,
   Store,
   FileBarChart,
-  FileBarChart,
   Settings,
 } from "lucide-react";
 import {
