@@ -355,6 +355,8 @@ function PDVPage() {
           <p className="text-[10px] text-center text-primary-foreground/70">Atalhos: Enter adiciona produto · F2 finaliza</p>
         </CardContent>
       </Card>
+        </div>
+      )}
 
       {/* Modal de pagamento */}
       <Dialog open={pagOpen} onOpenChange={setPagOpen}>
