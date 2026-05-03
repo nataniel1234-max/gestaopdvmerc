@@ -17,6 +17,7 @@ export type Database = {
       caixas: {
         Row: {
           aberto_em: string
+          comercio_id: string
           created_at: string
           diferenca: number | null
           fechado_em: string | null
@@ -42,6 +43,7 @@ export type Database = {
         }
         Insert: {
           aberto_em?: string
+          comercio_id?: string
           created_at?: string
           diferenca?: number | null
           fechado_em?: string | null
@@ -67,6 +69,7 @@ export type Database = {
         }
         Update: {
           aberto_em?: string
+          comercio_id?: string
           created_at?: string
           diferenca?: number | null
           fechado_em?: string | null
@@ -90,11 +93,20 @@ export type Database = {
           valor_fechamento_calculado?: number | null
           valor_fechamento_informado?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "caixas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clientes: {
         Row: {
           ativo: boolean
+          comercio_id: string
           created_at: string
           documento: string | null
           email: string | null
@@ -110,6 +122,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          comercio_id?: string
           created_at?: string
           documento?: string | null
           email?: string | null
@@ -125,6 +138,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          comercio_id?: string
           created_at?: string
           documento?: string | null
           email?: string | null
@@ -138,12 +152,51 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercios: {
+        Row: {
+          created_at: string
+          documento: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          documento?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          documento?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
         Relationships: []
       }
       fornecedores: {
         Row: {
           ativo: boolean
           cnpj: string | null
+          comercio_id: string
           created_at: string
           email: string | null
           endereco: string | null
@@ -157,6 +210,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           cnpj?: string | null
+          comercio_id?: string
           created_at?: string
           email?: string | null
           endereco?: string | null
@@ -170,6 +224,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           cnpj?: string | null
+          comercio_id?: string
           created_at?: string
           email?: string | null
           endereco?: string | null
@@ -180,10 +235,19 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       itens_nota_entrada: {
         Row: {
+          comercio_id: string
           id: string
           nota_id: string
           preco_custo_unitario: number
@@ -192,6 +256,7 @@ export type Database = {
           subtotal: number
         }
         Insert: {
+          comercio_id?: string
           id?: string
           nota_id: string
           preco_custo_unitario: number
@@ -200,6 +265,7 @@ export type Database = {
           subtotal: number
         }
         Update: {
+          comercio_id?: string
           id?: string
           nota_id?: string
           preco_custo_unitario?: number
@@ -208,6 +274,13 @@ export type Database = {
           subtotal?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "itens_nota_entrada_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "itens_nota_entrada_nota_id_fkey"
             columns: ["nota_id"]
@@ -226,6 +299,7 @@ export type Database = {
       }
       itens_venda: {
         Row: {
+          comercio_id: string
           id: string
           preco_unitario: number
           produto_id: string
@@ -235,6 +309,7 @@ export type Database = {
           venda_id: string
         }
         Insert: {
+          comercio_id?: string
           id?: string
           preco_unitario: number
           produto_id: string
@@ -244,6 +319,7 @@ export type Database = {
           venda_id: string
         }
         Update: {
+          comercio_id?: string
           id?: string
           preco_unitario?: number
           produto_id?: string
@@ -253,6 +329,13 @@ export type Database = {
           venda_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "itens_venda_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "itens_venda_produto_id_fkey"
             columns: ["produto_id"]
@@ -272,6 +355,7 @@ export type Database = {
       movimentacoes_caixa: {
         Row: {
           caixa_id: string
+          comercio_id: string
           created_at: string
           descricao: string | null
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
@@ -282,6 +366,7 @@ export type Database = {
         }
         Insert: {
           caixa_id: string
+          comercio_id?: string
           created_at?: string
           descricao?: string | null
           forma_pagamento?:
@@ -294,6 +379,7 @@ export type Database = {
         }
         Update: {
           caixa_id?: string
+          comercio_id?: string
           created_at?: string
           descricao?: string | null
           forma_pagamento?:
@@ -312,10 +398,18 @@ export type Database = {
             referencedRelation: "caixas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "movimentacoes_caixa_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
         ]
       }
       movimentacoes_estoque: {
         Row: {
+          comercio_id: string
           created_at: string
           custo_unitario: number | null
           estoque_anterior: number
@@ -329,6 +423,7 @@ export type Database = {
           tipo: Database["public"]["Enums"]["movimentacao_tipo"]
         }
         Insert: {
+          comercio_id?: string
           created_at?: string
           custo_unitario?: number | null
           estoque_anterior: number
@@ -342,6 +437,7 @@ export type Database = {
           tipo: Database["public"]["Enums"]["movimentacao_tipo"]
         }
         Update: {
+          comercio_id?: string
           created_at?: string
           custo_unitario?: number | null
           estoque_anterior?: number
@@ -356,6 +452,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "movimentacoes_estoque_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimentacoes_estoque_produto_id_fkey"
             columns: ["produto_id"]
             isOneToOne: false
@@ -366,6 +469,7 @@ export type Database = {
       }
       notas_entrada: {
         Row: {
+          comercio_id: string
           created_at: string
           data_entrada: string
           fornecedor_id: string | null
@@ -375,6 +479,7 @@ export type Database = {
           valor_total: number
         }
         Insert: {
+          comercio_id?: string
           created_at?: string
           data_entrada?: string
           fornecedor_id?: string | null
@@ -384,6 +489,7 @@ export type Database = {
           valor_total?: number
         }
         Update: {
+          comercio_id?: string
           created_at?: string
           data_entrada?: string
           fornecedor_id?: string | null
@@ -393,6 +499,13 @@ export type Database = {
           valor_total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "notas_entrada_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notas_entrada_fornecedor_id_fkey"
             columns: ["fornecedor_id"]
@@ -406,6 +519,7 @@ export type Database = {
         Row: {
           caixa_id: string | null
           cliente_id: string
+          comercio_id: string
           created_at: string
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
           id: string
@@ -415,6 +529,7 @@ export type Database = {
         Insert: {
           caixa_id?: string | null
           cliente_id: string
+          comercio_id?: string
           created_at?: string
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
           id?: string
@@ -424,6 +539,7 @@ export type Database = {
         Update: {
           caixa_id?: string | null
           cliente_id?: string
+          comercio_id?: string
           created_at?: string
           forma_pagamento?: Database["public"]["Enums"]["forma_pagamento"]
           id?: string
@@ -445,6 +561,13 @@ export type Database = {
             referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pagamentos_fiado_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
         ]
       }
       produtos: {
@@ -452,6 +575,7 @@ export type Database = {
           ativo: boolean
           categoria: string | null
           codigo_barras: string | null
+          comercio_id: string
           created_at: string
           descricao: string | null
           estoque_atual: number
@@ -468,6 +592,7 @@ export type Database = {
           ativo?: boolean
           categoria?: string | null
           codigo_barras?: string | null
+          comercio_id?: string
           created_at?: string
           descricao?: string | null
           estoque_atual?: number
@@ -484,6 +609,7 @@ export type Database = {
           ativo?: boolean
           categoria?: string | null
           codigo_barras?: string | null
+          comercio_id?: string
           created_at?: string
           descricao?: string | null
           estoque_atual?: number
@@ -498,10 +624,73 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "produtos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "produtos_fornecedor_id_fkey"
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          comercio_id: string
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
             referencedColumns: ["id"]
           },
         ]
@@ -511,6 +700,7 @@ export type Database = {
           caixa_id: string | null
           cancelada: boolean
           cliente_id: string | null
+          comercio_id: string
           created_at: string
           desconto: number
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
@@ -526,6 +716,7 @@ export type Database = {
           caixa_id?: string | null
           cancelada?: boolean
           cliente_id?: string | null
+          comercio_id?: string
           created_at?: string
           desconto?: number
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
@@ -541,6 +732,7 @@ export type Database = {
           caixa_id?: string | null
           cancelada?: boolean
           cliente_id?: string | null
+          comercio_id?: string
           created_at?: string
           desconto?: number
           forma_pagamento?: Database["public"]["Enums"]["forma_pagamento"]
@@ -567,6 +759,13 @@ export type Database = {
             referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vendas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -575,8 +774,22 @@ export type Database = {
     }
     Functions: {
       caixa_aberto: { Args: never; Returns: string }
+      current_user_comercio: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _comercio_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_member_of: {
+        Args: { _comercio_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "dono" | "operador"
       forma_pagamento: "dinheiro" | "debito" | "credito" | "pix" | "fiado"
       movimentacao_motivo:
         | "compra"
@@ -728,6 +941,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["dono", "operador"],
       forma_pagamento: ["dinheiro", "debito", "credito", "pix", "fiado"],
       movimentacao_motivo: [
         "compra",
