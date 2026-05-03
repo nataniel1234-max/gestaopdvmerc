@@ -9,11 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SaidasRouteImport } from './routes/saidas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as FornecedoresRouteImport } from './routes/fornecedores'
+import { Route as EntradasRouteImport } from './routes/entradas'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SaidasRoute = SaidasRouteImport.update({
+  id: '/saidas',
+  path: '/saidas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProdutosRoute = ProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -22,6 +29,11 @@ const ProdutosRoute = ProdutosRouteImport.update({
 const FornecedoresRoute = FornecedoresRouteImport.update({
   id: '/fornecedores',
   path: '/fornecedores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntradasRoute = EntradasRouteImport.update({
+  id: '/entradas',
+  path: '/entradas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientesRoute = ClientesRouteImport.update({
@@ -38,39 +50,73 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/entradas': typeof EntradasRoute
   '/fornecedores': typeof FornecedoresRoute
   '/produtos': typeof ProdutosRoute
+  '/saidas': typeof SaidasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/entradas': typeof EntradasRoute
   '/fornecedores': typeof FornecedoresRoute
   '/produtos': typeof ProdutosRoute
+  '/saidas': typeof SaidasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/entradas': typeof EntradasRoute
   '/fornecedores': typeof FornecedoresRoute
   '/produtos': typeof ProdutosRoute
+  '/saidas': typeof SaidasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clientes' | '/fornecedores' | '/produtos'
+  fullPaths:
+    | '/'
+    | '/clientes'
+    | '/entradas'
+    | '/fornecedores'
+    | '/produtos'
+    | '/saidas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clientes' | '/fornecedores' | '/produtos'
-  id: '__root__' | '/' | '/clientes' | '/fornecedores' | '/produtos'
+  to:
+    | '/'
+    | '/clientes'
+    | '/entradas'
+    | '/fornecedores'
+    | '/produtos'
+    | '/saidas'
+  id:
+    | '__root__'
+    | '/'
+    | '/clientes'
+    | '/entradas'
+    | '/fornecedores'
+    | '/produtos'
+    | '/saidas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesRoute: typeof ClientesRoute
+  EntradasRoute: typeof EntradasRoute
   FornecedoresRoute: typeof FornecedoresRoute
   ProdutosRoute: typeof ProdutosRoute
+  SaidasRoute: typeof SaidasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/saidas': {
+      id: '/saidas'
+      path: '/saidas'
+      fullPath: '/saidas'
+      preLoaderRoute: typeof SaidasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/produtos': {
       id: '/produtos'
       path: '/produtos'
@@ -83,6 +129,13 @@ declare module '@tanstack/react-router' {
       path: '/fornecedores'
       fullPath: '/fornecedores'
       preLoaderRoute: typeof FornecedoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entradas': {
+      id: '/entradas'
+      path: '/entradas'
+      fullPath: '/entradas'
+      preLoaderRoute: typeof EntradasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clientes': {
@@ -105,8 +158,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesRoute: ClientesRoute,
+  EntradasRoute: EntradasRoute,
   FornecedoresRoute: FornecedoresRoute,
   ProdutosRoute: ProdutosRoute,
+  SaidasRoute: SaidasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
