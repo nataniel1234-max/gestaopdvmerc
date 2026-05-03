@@ -70,26 +70,35 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const isPdv = pathname.startsWith("/pdv");
+
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-14 flex items-center gap-3 border-b bg-card px-4 sticky top-0 z-30 print:hidden">
-              <SidebarTrigger />
-              <div className="flex-1" />
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
-              </span>
-            </header>
-            <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
-              <Outlet />
-            </main>
-          </div>
+      {isPdv ? (
+        <div className="min-h-screen w-full bg-background">
+          <Outlet />
         </div>
-        <Toaster richColors position="top-right" />
-      </SidebarProvider>
+      ) : (
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-background">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col min-w-0">
+              <header className="h-14 flex items-center gap-3 border-b bg-card px-4 sticky top-0 z-30 print:hidden">
+                <SidebarTrigger />
+                <div className="flex-1" />
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+                </span>
+              </header>
+              <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+                <Outlet />
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
+      )}
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
