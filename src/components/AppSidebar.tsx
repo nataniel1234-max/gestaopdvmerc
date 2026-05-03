@@ -26,8 +26,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const operacao = [
-  { title: "PDV — Caixa", url: "/pdv", icon: ShoppingCart },
+type NavItem = {
+  title: string;
+  url: string;
+  icon: typeof ShoppingCart;
+  external?: boolean;
+};
+
+const operacao: NavItem[] = [
+  { title: "PDV — Caixa (nova janela)", url: "/pdv", icon: ShoppingCart, external: true },
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
 ];
@@ -55,18 +62,30 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
-  const Section = ({ label, items }: { label: string; items: typeof operacao }) => (
+  const Section = ({ label, items }: { label: string; items: NavItem[] }) => (
     <SidebarGroup>
       {!collapsed && <SidebarGroupLabel className="text-sidebar-foreground/60 uppercase tracking-wider text-xs">{label}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.url}>
-              <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                <Link to={item.url} className="flex items-center gap-3">
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="font-medium">{item.title}</span>}
-                </Link>
+              <SidebarMenuButton asChild isActive={!item.external && isActive(item.url)} tooltip={item.title}>
+                {item.external ? (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener"
+                    className="flex items-center gap-3"
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span className="font-medium">{item.title}</span>}
+                  </a>
+                ) : (
+                  <Link to={item.url} className="flex items-center gap-3">
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span className="font-medium">{item.title}</span>}
+                  </Link>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

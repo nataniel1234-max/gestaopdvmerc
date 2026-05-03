@@ -13,7 +13,7 @@ import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
 import { exigirCaixaAberto } from "@/lib/caixa";
-import { Link } from "@tanstack/react-router";
+
 import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
 import { CaixaControles } from "@/components/CaixaControles";
 import { imprimirDocumento } from "@/lib/print-config";
@@ -225,9 +225,20 @@ function PDVPage() {
             <CaixaControles />
           </div>
         </div>
-        <Link to="/" className="ml-2">
-          <Button size="sm" variant="ghost"><LogOut className="h-4 w-4 mr-1" /> Sair do PDV</Button>
-        </Link>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-2"
+          onClick={() => {
+            // Se foi aberto em nova janela, fecha. Senão volta ao dashboard.
+            window.close();
+            setTimeout(() => {
+              if (!window.closed) window.location.href = "/";
+            }, 100);
+          }}
+        >
+          <LogOut className="h-4 w-4 mr-1" /> Sair do PDV
+        </Button>
       </header>
 
       {!caixaAberto ? (
