@@ -59,14 +59,21 @@ function FiadoPage() {
       if (v <= 0) throw new Error("Valor inválido");
       if (v > Number(clienteSel.saldo_devedor)) throw new Error("Valor maior que o saldo devedor");
 
-      const { error: e1 } = await supabase.from("pagamentos_fiado").insert({
-        cliente_id: clienteSel.id, valor: v, forma_pagamento: forma, observacoes: obs || null,
-      });
+      const caixa_id = await exigirCaixaAberto();
+
+      const { data: pag, error: e1 } = await supabase.from("pagamentos_fiado").insert({
+        cliente_id: clienteSel.id, valor: v, forma_pagamento: forma, observacoes: obs || null, caixa_id,
+      }).select("id").single();
       if (e1) throw e1;
 
       const novoSaldo = Number(clienteSel.saldo_devedor) - v;
       const { error: e2 } = await supabase.from("clientes").update({ saldo_devedor: novoSaldo }).eq("id", clienteSel.id);
       if (e2) throw e2;
+
+      await supabase.from("movimentacoes_caixa").insert({
+        caixa_id, tipo: "recebimento_fiado", forma_pagamento: forma, valor: v,
+        descricao: `Recebimento fiado — ${clienteSel.nome}`, referencia_id: pag?.id ?? null,
+      });
     },
     onSuccess: () => {
       toast.success("Pagamento registrado");
