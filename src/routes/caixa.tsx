@@ -473,7 +473,7 @@ function DialogMov({
   );
 }
 
-function DialogHistorico({ open, onOpenChange, caixas }: { open: boolean; onOpenChange: (v: boolean) => void; caixas: any[] }) {
+function DialogHistorico({ open, onOpenChange, caixas, onPrint }: { open: boolean; onOpenChange: (v: boolean) => void; caixas: any[]; onPrint?: (c: CaixaCompleto) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
@@ -500,7 +500,7 @@ function DialogHistorico({ open, onOpenChange, caixas }: { open: boolean; onOpen
                     <TableCell className="text-right">{brl(c.valor_fechamento_calculado ?? 0)}</TableCell>
                     <TableCell className="text-right">{brl(c.valor_fechamento_informado ?? 0)}</TableCell>
                     <TableCell className={`text-right font-bold ${Math.abs(dif) < 0.005 ? "text-success" : "text-destructive"}`}>{brl(dif)}</TableCell>
-                    <TableCell><Button size="icon" variant="ghost" onClick={() => window.print()}><Printer className="h-4 w-4" /></Button></TableCell>
+                    <TableCell><Button size="icon" variant="ghost" onClick={() => onPrint?.(c as CaixaCompleto)}><Printer className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 );
               })}
@@ -511,3 +511,34 @@ function DialogHistorico({ open, onOpenChange, caixas }: { open: boolean; onOpen
     </Dialog>
   );
 }
+
+function DialogGuia({
+  caixa, onClose, movimentacoes, vendas, recebimentosFiado,
+}: {
+  caixa: CaixaCompleto | null;
+  onClose: () => void;
+  movimentacoes?: any[];
+  vendas?: any[];
+  recebimentosFiado?: any[];
+}) {
+  return (
+    <Dialog open={!!caixa} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Printer className="h-5 w-5" /> Guia de Fechamento</DialogTitle></DialogHeader>
+        {caixa && (
+          <GuiaCaixa
+            caixa={caixa}
+            movimentacoes={movimentacoes ?? []}
+            vendas={vendas ?? []}
+            recebimentosFiado={recebimentosFiado ?? []}
+          />
+        )}
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimir guia</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
