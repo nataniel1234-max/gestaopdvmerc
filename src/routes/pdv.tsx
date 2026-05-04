@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store, Scale } from "lucide-react";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
