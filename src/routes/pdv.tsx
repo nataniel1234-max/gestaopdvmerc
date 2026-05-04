@@ -319,10 +319,13 @@ function PDVPage() {
                   {sugestoes.map((p) => (
                     <button key={p.id} onClick={() => adicionar(p)} className="w-full text-left px-3 py-2 hover:bg-accent flex justify-between items-center border-b last:border-0">
                       <div>
-                        <div className="font-medium">{p.nome}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {p.nome}
+                          {p.vendido_por_peso && <span className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded"><Scale className="h-3 w-3" /> peso</span>}
+                        </div>
                         <div className="text-xs text-muted-foreground">{p.codigo_barras ?? "—"} · estoque: {Number(p.estoque_atual)} {p.unidade}</div>
                       </div>
-                      <div className="font-bold text-primary">{brl(p.preco_venda)}</div>
+                      <div className="font-bold text-primary">{brl(p.preco_venda)}{p.vendido_por_peso ? "/kg" : ""}</div>
                     </button>
                   ))}
                 </div>
@@ -347,16 +350,37 @@ function PDVPage() {
                 {carrinho.map((it) => (
                   <div key={it.produto_id} className="flex items-center gap-3 p-3 border rounded-md hover:bg-accent/30">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{it.produto_nome}</div>
-                      <div className="text-xs text-muted-foreground">{brl(it.preco_unitario)} / {it.unidade}</div>
+                      <div className="font-medium truncate flex items-center gap-2">
+                        {it.produto_nome}
+                        {it.vendido_por_peso && <Scale className="h-3 w-3 text-primary shrink-0" />}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {brl(it.preco_unitario)} / {it.vendido_por_peso ? "kg" : it.unidade}
+                        {it.vendido_por_peso && <> · <strong>{(it.quantidade * 1000).toFixed(0)} g</strong> ({it.quantidade.toFixed(3)} kg)</>}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade - 1)}><Minus className="h-3 w-3" /></Button>
-                      <Input type="number" step="0.001" value={it.quantidade}
-                        onChange={(e) => setQtd(it.produto_id, Number(e.target.value))}
-                        className="w-16 h-8 text-center" />
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade + 1)}><Plus className="h-3 w-3" /></Button>
-                    </div>
+                    {it.vendido_por_peso ? (
+                      <Button size="sm" variant="outline" className="h-8" onClick={() => {
+                        const p = produtos.find((x) => x.id === it.produto_id);
+                        if (!p) return;
+                        // Reabre modal de peso pré-preenchido; remove o item atual e re-adiciona
+                        setCarrinho((prev) => prev.filter((x) => x.produto_id !== it.produto_id));
+                        setPesoProduto(p as ProdutoPDV);
+                        setPesoValor(String(it.quantidade));
+                        setPesoUnidade("kg");
+                        setPesoOpen(true);
+                      }}>
+                        <Scale className="h-3 w-3 mr-1" /> Alterar peso
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade - 1)}><Minus className="h-3 w-3" /></Button>
+                        <Input type="number" step="0.001" value={it.quantidade}
+                          onChange={(e) => setQtd(it.produto_id, Number(e.target.value))}
+                          className="w-16 h-8 text-center" />
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade + 1)}><Plus className="h-3 w-3" /></Button>
+                      </div>
+                    )}
                     <div className="w-24 text-right font-bold">{brl(it.quantidade * it.preco_unitario)}</div>
                     <Button size="icon" variant="ghost" onClick={() => remover(it.produto_id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
