@@ -142,14 +142,21 @@ function EntradasPage() {
                 {itens.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item adicionado</TableCell></TableRow>}
                 {itens.map((it, i) => (
                   <TableRow key={i}>
-                    <TableCell className="font-medium">{it.produto_nome}</TableCell>
+                    <TableCell className="font-medium">
+                      {it.produto_nome}
+                      {it.vendido_por_peso && <span className="ml-2 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">peso (kg)</span>}
+                    </TableCell>
                     <TableCell>
-                      <Input type="number" step="0.001" value={it.quantidade}
-                        onChange={(e) => setItens((prev) => prev.map((x, j) => j === i ? { ...x, quantidade: Number(e.target.value) } : x))} />
+                      <div className="flex items-center gap-1">
+                        <Input type="number" step="0.001" value={it.quantidade}
+                          onChange={(e) => setItens((prev) => prev.map((x, j) => j === i ? { ...x, quantidade: Number(e.target.value) } : x))} />
+                        <span className="text-xs text-muted-foreground">{it.vendido_por_peso ? "kg" : (it.unidade ?? "")}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Input type="number" step="0.01" value={it.preco_custo}
                         onChange={(e) => setItens((prev) => prev.map((x, j) => j === i ? { ...x, preco_custo: Number(e.target.value) } : x))} />
+                      {it.vendido_por_peso && <p className="text-[10px] text-muted-foreground mt-1">por kg</p>}
                     </TableCell>
                     <TableCell className="text-right font-semibold">{brl(it.quantidade * it.preco_custo)}</TableCell>
                     <TableCell><Button size="icon" variant="ghost" onClick={() => setItens((prev) => prev.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
