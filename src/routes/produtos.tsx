@@ -9,8 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, Barcode, AlertTriangle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Barcode, AlertTriangle, Scale } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -31,11 +32,13 @@ type ProdutoForm = {
   estoque_atual: string;
   estoque_minimo: string;
   fornecedor_id: string | null;
+  vendido_por_peso: boolean;
 };
 
 const empty: ProdutoForm = {
   nome: "", codigo_barras: "", categoria: "", unidade: "UN",
   preco_custo: "0", preco_venda: "0", estoque_atual: "0", estoque_minimo: "0", fornecedor_id: null,
+  vendido_por_peso: false,
 };
 
 function ProdutosPage() {
@@ -72,12 +75,13 @@ function ProdutosPage() {
         nome: f.nome.trim(),
         codigo_barras: f.codigo_barras.trim() || null,
         categoria: f.categoria.trim() || null,
-        unidade: f.unidade,
+        unidade: f.vendido_por_peso ? "KG" : f.unidade,
         preco_custo: Number(f.preco_custo),
         preco_venda: Number(f.preco_venda),
         estoque_atual: Number(f.estoque_atual),
         estoque_minimo: Number(f.estoque_minimo),
         fornecedor_id: f.fornecedor_id,
+        vendido_por_peso: f.vendido_por_peso,
       };
       if (f.id) {
         const { error } = await supabase.from("produtos").update(payload).eq("id", f.id);
@@ -110,6 +114,7 @@ function ProdutosPage() {
       preco_custo: String(p.preco_custo), preco_venda: String(p.preco_venda),
       estoque_atual: String(p.estoque_atual), estoque_minimo: String(p.estoque_minimo),
       fornecedor_id: p.fornecedor_id,
+      vendido_por_peso: (p as { vendido_por_peso?: boolean }).vendido_por_peso ?? false,
     });
     setOpen(true);
   };
