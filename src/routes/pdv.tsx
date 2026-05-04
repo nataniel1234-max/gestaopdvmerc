@@ -506,6 +506,70 @@ function PDVPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de peso (produtos vendidos por peso) */}
+      <Dialog open={pesoOpen} onOpenChange={(v) => { if (!v) { setPesoOpen(false); setPesoProduto(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Scale className="h-5 w-5 text-primary" /> Informe o peso</DialogTitle>
+          </DialogHeader>
+          {pesoProduto && (
+            <div className="space-y-3">
+              <div className="bg-muted p-3 rounded-md">
+                <div className="font-medium">{pesoProduto.nome}</div>
+                <div className="text-xs text-muted-foreground">
+                  Preço: <strong>{brl(pesoProduto.preco_venda)}/kg</strong> · Estoque: {Number(pesoProduto.estoque_atual)} kg
+                </div>
+              </div>
+              <div>
+                <Label>Peso</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number" step="0.001" inputMode="decimal" autoFocus
+                    value={pesoValor} onChange={(e) => setPesoValor(e.target.value)}
+                    placeholder={pesoUnidade === "kg" ? "Ex: 0,500 ou 2,5" : "Ex: 500 ou 2500"}
+                    className="text-lg h-11"
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmarPeso(); } }}
+                  />
+                  <Select value={pesoUnidade} onValueChange={(v) => setPesoUnidade(v as "kg" | "g")}>
+                    <SelectTrigger className="w-24 h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="g">g</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {pesoUnidade === "kg"
+                    ? [0.1, 0.25, 0.5, 1, 1.5, 2].map((v) => (
+                        <Button key={v} size="sm" type="button" variant="outline" className="text-xs h-7"
+                          onClick={() => setPesoValor(String(v))}>{v} kg</Button>
+                      ))
+                    : [100, 200, 250, 500, 750, 1000].map((v) => (
+                        <Button key={v} size="sm" type="button" variant="outline" className="text-xs h-7"
+                          onClick={() => setPesoValor(String(v))}>{v} g</Button>
+                      ))}
+                </div>
+              </div>
+              {(() => {
+                const v = Number((pesoValor || "0").replace(",", "."));
+                const kg = pesoUnidade === "g" ? v / 1000 : v;
+                const total = kg * Number(pesoProduto.preco_venda);
+                return (
+                  <div className="flex justify-between items-baseline border-t pt-3">
+                    <span className="text-sm">Total do item</span>
+                    <span className="text-2xl font-bold text-primary">{brl(total)}</span>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPesoOpen(false); setPesoProduto(null); }}>Cancelar</Button>
+            <Button onClick={confirmarPeso}>Adicionar ao carrinho</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Cupom impresso */}
       <Dialog open={!!cupomFinal} onOpenChange={(v) => { if (!v) setCupomFinal(null); }}>
         <DialogContent className="max-w-md">
