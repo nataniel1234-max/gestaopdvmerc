@@ -144,12 +144,24 @@ function ProdutosPage() {
                 </div>
                 <div>
                   <Label>Unidade</Label>
-                  <Select value={form.unidade} onValueChange={(v) => setForm({ ...form, unidade: v })}>
+                  <Select value={form.vendido_por_peso ? "KG" : form.unidade} disabled={form.vendido_por_peso} onValueChange={(v) => setForm({ ...form, unidade: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {["UN", "KG", "G", "L", "ML", "CX", "PCT", "DZ"].map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between rounded-md border p-3 bg-accent/30">
+                    <div className="flex items-center gap-2">
+                      <Scale className="h-4 w-4 text-primary" />
+                      <div>
+                        <Label className="cursor-pointer">Vendido por peso (hortifrúti, frios, açougue)</Label>
+                        <p className="text-xs text-muted-foreground">O preço de venda passa a ser por kg. No PDV, o operador informa o peso (ex: 0,500 kg).</p>
+                      </div>
+                    </div>
+                    <Switch checked={form.vendido_por_peso} onCheckedChange={(v) => setForm({ ...form, vendido_por_peso: v, unidade: v ? "KG" : form.unidade })} />
+                  </div>
                 </div>
                 <div>
                   <Label>Fornecedor</Label>
