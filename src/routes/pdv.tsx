@@ -26,6 +26,12 @@ export const Route = createFileRoute("/pdv")({
   component: PDVPage,
 });
 
+type ProdutoPDV = {
+  id: string; nome: string; codigo_barras: string | null;
+  preco_venda: number; estoque_atual: number; unidade: string;
+  vendido_por_peso?: boolean;
+};
+
 type Carrinho = {
   produto_id: string;
   produto_nome: string;
@@ -112,17 +118,55 @@ function PDVPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagOpen, forma, valorRecebido, total]);
 
-  const adicionar = (p: typeof produtos[number]) => {
+  // Modal para informar peso de produtos pesáveis
+  const [pesoOpen, setPesoOpen] = useState(false);
+  const [pesoProduto, setPesoProduto] = useState<ProdutoPDV | null>(null);
+  const [pesoValor, setPesoValor] = useState("");
+  const [pesoUnidade, setPesoUnidade] = useState<"kg" | "g">("kg");
+
+  const adicionarItem = (p: ProdutoPDV, quantidade: number) => {
     setCarrinho((prev) => {
       const ex = prev.find((x) => x.produto_id === p.id);
       if (ex) {
-        if (ex.quantidade + 1 > Number(p.estoque_atual)) { toast.warning("Estoque insuficiente"); return prev; }
-        return prev.map((x) => x.produto_id === p.id ? { ...x, quantidade: x.quantidade + 1 } : x);
+        const nova = ex.quantidade + quantidade;
+        if (nova > Number(p.estoque_atual)) { toast.warning("Estoque insuficiente"); return prev; }
+        return prev.map((x) => x.produto_id === p.id ? { ...x, quantidade: nova } : x);
       }
-      if (Number(p.estoque_atual) <= 0) { toast.warning(`${p.nome} sem estoque`); return prev; }
-      return [...prev, { produto_id: p.id, produto_nome: p.nome, preco_unitario: Number(p.preco_venda), quantidade: 1, estoque_disponivel: Number(p.estoque_atual), unidade: p.unidade }];
+      if (quantidade > Number(p.estoque_atual)) { toast.warning(`${p.nome}: estoque insuficiente`); return prev; }
+      return [...prev, {
+        produto_id: p.id, produto_nome: p.nome,
+        preco_unitario: Number(p.preco_venda), quantidade,
+        estoque_disponivel: Number(p.estoque_atual), unidade: p.unidade,
+        vendido_por_peso: p.vendido_por_peso,
+      }];
     });
+  };
+
+  const adicionar = (p: ProdutoPDV) => {
+    if (Number(p.estoque_atual) <= 0) { toast.warning(`${p.nome} sem estoque`); return; }
+    if (p.vendido_por_peso) {
+      setPesoProduto(p);
+      setPesoValor("");
+      setPesoUnidade("kg");
+      setPesoOpen(true);
+      return;
+    }
+    adicionarItem(p, 1);
     setBusca("");
+    inputBuscaRef.current?.focus();
+  };
+
+  const confirmarPeso = () => {
+    if (!pesoProduto) return;
+    const v = Number(pesoValor.replace(",", "."));
+    if (!v || v <= 0) { toast.warning("Informe um peso válido"); return; }
+    const kg = pesoUnidade === "g" ? v / 1000 : v;
+    if (kg > Number(pesoProduto.estoque_atual)) {
+      toast.warning(`Estoque disponível: ${Number(pesoProduto.estoque_atual)} kg`);
+      return;
+    }
+    adicionarItem(pesoProduto, kg);
+    setPesoOpen(false); setPesoProduto(null); setPesoValor(""); setBusca("");
     inputBuscaRef.current?.focus();
   };
 
