@@ -174,7 +174,7 @@ function ProdutosPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Preço de custo</Label>
+                  <Label>Preço de custo {form.vendido_por_peso ? "(por kg)" : ""}</Label>
                   <Input type="number" step="0.01" value={form.preco_custo}
                     onChange={(e) => {
                       const custo = e.target.value;
@@ -209,7 +209,7 @@ function ProdutosPage() {
                     placeholder="Ex: 30" />
                 </div>
                 <div>
-                  <Label>Preço de venda *</Label>
+                  <Label>Preço de venda * {form.vendido_por_peso ? "(por kg)" : ""}</Label>
                   <Input type="number" step="0.01" value={form.preco_venda}
                     onChange={(e) => setForm({ ...form, preco_venda: e.target.value })} />
                   {(() => {
@@ -223,8 +223,8 @@ function ProdutosPage() {
                     return null;
                   })()}
                 </div>
-                <div><Label>Estoque atual</Label><Input type="number" step="0.001" value={form.estoque_atual} onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })} /></div>
-                <div><Label>Estoque mínimo</Label><Input type="number" step="0.001" value={form.estoque_minimo} onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })} /></div>
+                <div><Label>Estoque atual {form.vendido_por_peso ? "(em kg)" : ""}</Label><Input type="number" step="0.001" value={form.estoque_atual} onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })} /></div>
+                <div><Label>Estoque mínimo {form.vendido_por_peso ? "(em kg)" : ""}</Label><Input type="number" step="0.001" value={form.estoque_minimo} onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })} /></div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
