@@ -394,3 +394,69 @@ function CupomTab({ comercioId }: { comercioId: string }) {
     </Card>
   );
 }
+
+/* ---------- Aparência (tema) ---------- */
+function AparenciaTab() {
+  const [tema, setTema] = useState<Tema>(() => carregarTema());
+
+  // Pré-visualiza ao alterar
+  const change = (patch: Partial<Tema>) => {
+    const novo = { ...tema, ...patch };
+    setTema(novo);
+    aplicarTema(novo);
+  };
+
+  const salvar = () => { salvarTema(tema); toast.success("Aparência salva neste dispositivo"); };
+  const restaurar = () => { setTema(TEMA_PADRAO); salvarTema(TEMA_PADRAO); toast.info("Cores padrão restauradas"); };
+
+  const Campo = ({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) => (
+    <div className="grid gap-1">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-14 rounded-md border cursor-pointer bg-transparent"
+        />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} className="font-mono" />
+      </div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" /> Cores do sistema</CardTitle>
+        <CardDescription>
+          Ajuste as cores predominantes. As alterações são aplicadas imediatamente para visualização e salvas neste dispositivo ao clicar em <strong>Salvar</strong>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-5 max-w-xl">
+        <Campo label="Cor primária (botões, destaques, sidebar)" value={tema.primary}
+          onChange={(v) => change({ primary: v })} hint="Use a cor de identidade da sua marca." />
+        <Campo label="Cor de fundo" value={tema.background}
+          onChange={(v) => change({ background: v })} hint="Fundo geral do sistema. Recomendado bem claro." />
+        <Campo label="Cor do texto" value={tema.foreground}
+          onChange={(v) => change({ foreground: v })} hint="Texto padrão. Recomendado escuro para boa leitura." />
+
+        <div className="rounded-md border p-4 space-y-2"
+          style={{ background: "var(--background)", color: "var(--foreground)" }}>
+          <p className="text-sm">Pré-visualização:</p>
+          <div className="flex gap-2 flex-wrap items-center">
+            <Button>Botão primário</Button>
+            <Button variant="outline">Botão secundário</Button>
+            <Badge>Etiqueta</Badge>
+            <span className="text-sm">Texto comum no fundo do app.</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={salvar}><Save className="h-4 w-4 mr-1" /> Salvar</Button>
+          <Button variant="outline" onClick={restaurar}>Restaurar padrão</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
