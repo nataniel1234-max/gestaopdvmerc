@@ -263,15 +263,19 @@ function ProdutosPage() {
               )}
               {filtrados.map((p) => {
                 const baixo = Number(p.estoque_atual) <= Number(p.estoque_minimo);
+                const peso = (p as { vendido_por_peso?: boolean }).vendido_por_peso;
                 return (
                   <TableRow key={p.id} className={!p.ativo ? "opacity-50" : ""}>
                     <TableCell>
-                      <div className="font-medium">{p.nome}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {p.nome}
+                        {peso && <Badge variant="outline" className="text-[10px] gap-1"><Scale className="h-3 w-3" /> peso</Badge>}
+                      </div>
                       {p.categoria && <div className="text-xs text-muted-foreground">{p.categoria}</div>}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{p.codigo_barras ?? "—"}</TableCell>
-                    <TableCell className="text-right">{brl(p.preco_custo)}</TableCell>
-                    <TableCell className="text-right font-semibold">{brl(p.preco_venda)}</TableCell>
+                    <TableCell className="text-right">{brl(p.preco_custo)}{peso ? "/kg" : ""}</TableCell>
+                    <TableCell className="text-right font-semibold">{brl(p.preco_venda)}{peso ? "/kg" : ""}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {baixo && <AlertTriangle className="h-3 w-3 text-warning" />}
