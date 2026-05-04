@@ -725,6 +725,7 @@ export type Database = {
           preco_venda: number
           unidade: string
           updated_at: string
+          vendido_por_peso: boolean
         }
         Insert: {
           ativo?: boolean
@@ -742,6 +743,7 @@ export type Database = {
           preco_venda?: number
           unidade?: string
           updated_at?: string
+          vendido_por_peso?: boolean
         }
         Update: {
           ativo?: boolean
@@ -759,6 +761,7 @@ export type Database = {
           preco_venda?: number
           unidade?: string
           updated_at?: string
+          vendido_por_peso?: boolean
         }
         Relationships: [
           {
