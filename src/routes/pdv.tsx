@@ -33,6 +33,7 @@ type Carrinho = {
   quantidade: number;
   estoque_disponivel: number;
   unidade: string;
+  vendido_por_peso?: boolean;
 };
 
 function PDVPage() {
@@ -50,7 +51,7 @@ function PDVPage() {
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-pdv"],
-    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade").eq("ativo", true).order("nome")).data ?? [],
+    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade, vendido_por_peso").eq("ativo", true).order("nome")).data ?? [],
     staleTime: 2 * 60_000,
   });
   const { data: clientes = [] } = useQuery({
