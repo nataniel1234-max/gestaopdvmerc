@@ -16,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Save, Store } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, Store, Palette } from "lucide-react";
+import { TEMA_PADRAO, carregarTema, salvarTema, aplicarTema, type Tema } from "@/lib/tema";
 
 export const Route = createFileRoute("/comercio")({
   head: () => ({ meta: [{ title: "Configurações do Comércio" }] }),
@@ -43,14 +44,16 @@ function ComercioPage() {
         description="Personalize formas de pagamento, naturezas de lançamento e cupom para este comércio."
       />
       <Tabs defaultValue="dados">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl mb-4">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-4">
           <TabsTrigger value="dados">Dados</TabsTrigger>
+          <TabsTrigger value="aparencia">Aparência</TabsTrigger>
           <TabsTrigger value="formas">Formas de pagto</TabsTrigger>
           <TabsTrigger value="naturezas">Naturezas</TabsTrigger>
           <TabsTrigger value="cupom">Cupom</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados"><DadosTab onSaved={refreshComercio} /></TabsContent>
+        <TabsContent value="aparencia"><AparenciaTab /></TabsContent>
         <TabsContent value="formas"><FormasTab comercioId={comercio.id} /></TabsContent>
         <TabsContent value="naturezas"><NaturezasTab comercioId={comercio.id} /></TabsContent>
         <TabsContent value="cupom"><CupomTab comercioId={comercio.id} /></TabsContent>
