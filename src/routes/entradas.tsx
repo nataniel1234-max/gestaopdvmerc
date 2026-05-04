@@ -19,7 +19,7 @@ export const Route = createFileRoute("/entradas")({
   component: EntradasPage,
 });
 
-type Item = { produto_id: string; produto_nome: string; quantidade: number; preco_custo: number };
+type Item = { produto_id: string; produto_nome: string; quantidade: number; preco_custo: number; vendido_por_peso?: boolean; unidade?: string };
 
 function EntradasPage() {
   const qc = useQueryClient();
@@ -32,7 +32,7 @@ function EntradasPage() {
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-busca"],
-    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_custo, unidade").eq("ativo", true).order("nome")).data ?? [],
+    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_custo, unidade, vendido_por_peso").eq("ativo", true).order("nome")).data ?? [],
   });
   const { data: fornecedores = [] } = useQuery({
     queryKey: ["fornecedores-lista"],
@@ -48,7 +48,12 @@ function EntradasPage() {
   ).slice(0, 8) : [];
 
   const adicionar = (p: typeof produtos[number]) => {
-    setItens((prev) => [...prev, { produto_id: p.id, produto_nome: p.nome, quantidade: 1, preco_custo: Number(p.preco_custo) }]);
+    setItens((prev) => [...prev, {
+      produto_id: p.id, produto_nome: p.nome, quantidade: 1,
+      preco_custo: Number(p.preco_custo),
+      vendido_por_peso: (p as { vendido_por_peso?: boolean }).vendido_por_peso ?? false,
+      unidade: p.unidade,
+    }]);
     setBusca("");
   };
 
