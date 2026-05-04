@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { LogOut, Store } from "lucide-react";
+import { aplicarTema, carregarTema } from "@/lib/tema";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -56,6 +57,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => { aplicarTema(carregarTema()); }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

@@ -9,8 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, Barcode, AlertTriangle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Barcode, AlertTriangle, Scale } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -31,11 +32,13 @@ type ProdutoForm = {
   estoque_atual: string;
   estoque_minimo: string;
   fornecedor_id: string | null;
+  vendido_por_peso: boolean;
 };
 
 const empty: ProdutoForm = {
   nome: "", codigo_barras: "", categoria: "", unidade: "UN",
   preco_custo: "0", preco_venda: "0", estoque_atual: "0", estoque_minimo: "0", fornecedor_id: null,
+  vendido_por_peso: false,
 };
 
 function ProdutosPage() {
@@ -72,12 +75,13 @@ function ProdutosPage() {
         nome: f.nome.trim(),
         codigo_barras: f.codigo_barras.trim() || null,
         categoria: f.categoria.trim() || null,
-        unidade: f.unidade,
+        unidade: f.vendido_por_peso ? "KG" : f.unidade,
         preco_custo: Number(f.preco_custo),
         preco_venda: Number(f.preco_venda),
         estoque_atual: Number(f.estoque_atual),
         estoque_minimo: Number(f.estoque_minimo),
         fornecedor_id: f.fornecedor_id,
+        vendido_por_peso: f.vendido_por_peso,
       };
       if (f.id) {
         const { error } = await supabase.from("produtos").update(payload).eq("id", f.id);
@@ -110,6 +114,7 @@ function ProdutosPage() {
       preco_custo: String(p.preco_custo), preco_venda: String(p.preco_venda),
       estoque_atual: String(p.estoque_atual), estoque_minimo: String(p.estoque_minimo),
       fornecedor_id: p.fornecedor_id,
+      vendido_por_peso: (p as { vendido_por_peso?: boolean }).vendido_por_peso ?? false,
     });
     setOpen(true);
   };
@@ -139,12 +144,24 @@ function ProdutosPage() {
                 </div>
                 <div>
                   <Label>Unidade</Label>
-                  <Select value={form.unidade} onValueChange={(v) => setForm({ ...form, unidade: v })}>
+                  <Select value={form.vendido_por_peso ? "KG" : form.unidade} disabled={form.vendido_por_peso} onValueChange={(v) => setForm({ ...form, unidade: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {["UN", "KG", "G", "L", "ML", "CX", "PCT", "DZ"].map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between rounded-md border p-3 bg-accent/30">
+                    <div className="flex items-center gap-2">
+                      <Scale className="h-4 w-4 text-primary" />
+                      <div>
+                        <Label className="cursor-pointer">Vendido por peso (hortifrúti, frios, açougue)</Label>
+                        <p className="text-xs text-muted-foreground">O preço de venda passa a ser por kg. No PDV, o operador informa o peso (ex: 0,500 kg).</p>
+                      </div>
+                    </div>
+                    <Switch checked={form.vendido_por_peso} onCheckedChange={(v) => setForm({ ...form, vendido_por_peso: v, unidade: v ? "KG" : form.unidade })} />
+                  </div>
                 </div>
                 <div>
                   <Label>Fornecedor</Label>
@@ -157,7 +174,7 @@ function ProdutosPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Preço de custo</Label>
+                  <Label>Preço de custo {form.vendido_por_peso ? "(por kg)" : ""}</Label>
                   <Input type="number" step="0.01" value={form.preco_custo}
                     onChange={(e) => {
                       const custo = e.target.value;
@@ -192,7 +209,7 @@ function ProdutosPage() {
                     placeholder="Ex: 30" />
                 </div>
                 <div>
-                  <Label>Preço de venda *</Label>
+                  <Label>Preço de venda * {form.vendido_por_peso ? "(por kg)" : ""}</Label>
                   <Input type="number" step="0.01" value={form.preco_venda}
                     onChange={(e) => setForm({ ...form, preco_venda: e.target.value })} />
                   {(() => {
@@ -206,8 +223,8 @@ function ProdutosPage() {
                     return null;
                   })()}
                 </div>
-                <div><Label>Estoque atual</Label><Input type="number" step="0.001" value={form.estoque_atual} onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })} /></div>
-                <div><Label>Estoque mínimo</Label><Input type="number" step="0.001" value={form.estoque_minimo} onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })} /></div>
+                <div><Label>Estoque atual {form.vendido_por_peso ? "(em kg)" : ""}</Label><Input type="number" step="0.001" value={form.estoque_atual} onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })} /></div>
+                <div><Label>Estoque mínimo {form.vendido_por_peso ? "(em kg)" : ""}</Label><Input type="number" step="0.001" value={form.estoque_minimo} onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })} /></div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -246,15 +263,19 @@ function ProdutosPage() {
               )}
               {filtrados.map((p) => {
                 const baixo = Number(p.estoque_atual) <= Number(p.estoque_minimo);
+                const peso = (p as { vendido_por_peso?: boolean }).vendido_por_peso;
                 return (
                   <TableRow key={p.id} className={!p.ativo ? "opacity-50" : ""}>
                     <TableCell>
-                      <div className="font-medium">{p.nome}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {p.nome}
+                        {peso && <Badge variant="outline" className="text-[10px] gap-1"><Scale className="h-3 w-3" /> peso</Badge>}
+                      </div>
                       {p.categoria && <div className="text-xs text-muted-foreground">{p.categoria}</div>}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{p.codigo_barras ?? "—"}</TableCell>
-                    <TableCell className="text-right">{brl(p.preco_custo)}</TableCell>
-                    <TableCell className="text-right font-semibold">{brl(p.preco_venda)}</TableCell>
+                    <TableCell className="text-right">{brl(p.preco_custo)}{peso ? "/kg" : ""}</TableCell>
+                    <TableCell className="text-right font-semibold">{brl(p.preco_venda)}{peso ? "/kg" : ""}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {baixo && <AlertTriangle className="h-3 w-3 text-warning" />}

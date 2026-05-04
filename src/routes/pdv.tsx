@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store, Scale } from "lucide-react";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
@@ -26,6 +26,12 @@ export const Route = createFileRoute("/pdv")({
   component: PDVPage,
 });
 
+type ProdutoPDV = {
+  id: string; nome: string; codigo_barras: string | null;
+  preco_venda: number; estoque_atual: number; unidade: string;
+  vendido_por_peso?: boolean;
+};
+
 type Carrinho = {
   produto_id: string;
   produto_nome: string;
@@ -33,6 +39,7 @@ type Carrinho = {
   quantidade: number;
   estoque_disponivel: number;
   unidade: string;
+  vendido_por_peso?: boolean;
 };
 
 function PDVPage() {
@@ -50,7 +57,7 @@ function PDVPage() {
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-pdv"],
-    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade").eq("ativo", true).order("nome")).data ?? [],
+    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade, vendido_por_peso").eq("ativo", true).order("nome")).data ?? [],
     staleTime: 2 * 60_000,
   });
   const { data: clientes = [] } = useQuery({
@@ -111,17 +118,55 @@ function PDVPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagOpen, forma, valorRecebido, total]);
 
-  const adicionar = (p: typeof produtos[number]) => {
+  // Modal para informar peso de produtos pesáveis
+  const [pesoOpen, setPesoOpen] = useState(false);
+  const [pesoProduto, setPesoProduto] = useState<ProdutoPDV | null>(null);
+  const [pesoValor, setPesoValor] = useState("");
+  const [pesoUnidade, setPesoUnidade] = useState<"kg" | "g">("kg");
+
+  const adicionarItem = (p: ProdutoPDV, quantidade: number) => {
     setCarrinho((prev) => {
       const ex = prev.find((x) => x.produto_id === p.id);
       if (ex) {
-        if (ex.quantidade + 1 > Number(p.estoque_atual)) { toast.warning("Estoque insuficiente"); return prev; }
-        return prev.map((x) => x.produto_id === p.id ? { ...x, quantidade: x.quantidade + 1 } : x);
+        const nova = ex.quantidade + quantidade;
+        if (nova > Number(p.estoque_atual)) { toast.warning("Estoque insuficiente"); return prev; }
+        return prev.map((x) => x.produto_id === p.id ? { ...x, quantidade: nova } : x);
       }
-      if (Number(p.estoque_atual) <= 0) { toast.warning(`${p.nome} sem estoque`); return prev; }
-      return [...prev, { produto_id: p.id, produto_nome: p.nome, preco_unitario: Number(p.preco_venda), quantidade: 1, estoque_disponivel: Number(p.estoque_atual), unidade: p.unidade }];
+      if (quantidade > Number(p.estoque_atual)) { toast.warning(`${p.nome}: estoque insuficiente`); return prev; }
+      return [...prev, {
+        produto_id: p.id, produto_nome: p.nome,
+        preco_unitario: Number(p.preco_venda), quantidade,
+        estoque_disponivel: Number(p.estoque_atual), unidade: p.unidade,
+        vendido_por_peso: p.vendido_por_peso,
+      }];
     });
+  };
+
+  const adicionar = (p: ProdutoPDV) => {
+    if (Number(p.estoque_atual) <= 0) { toast.warning(`${p.nome} sem estoque`); return; }
+    if (p.vendido_por_peso) {
+      setPesoProduto(p);
+      setPesoValor("");
+      setPesoUnidade("kg");
+      setPesoOpen(true);
+      return;
+    }
+    adicionarItem(p, 1);
     setBusca("");
+    inputBuscaRef.current?.focus();
+  };
+
+  const confirmarPeso = () => {
+    if (!pesoProduto) return;
+    const v = Number(pesoValor.replace(",", "."));
+    if (!v || v <= 0) { toast.warning("Informe um peso válido"); return; }
+    const kg = pesoUnidade === "g" ? v / 1000 : v;
+    if (kg > Number(pesoProduto.estoque_atual)) {
+      toast.warning(`Estoque disponível: ${Number(pesoProduto.estoque_atual)} kg`);
+      return;
+    }
+    adicionarItem(pesoProduto, kg);
+    setPesoOpen(false); setPesoProduto(null); setPesoValor(""); setBusca("");
     inputBuscaRef.current?.focus();
   };
 
@@ -274,10 +319,13 @@ function PDVPage() {
                   {sugestoes.map((p) => (
                     <button key={p.id} onClick={() => adicionar(p)} className="w-full text-left px-3 py-2 hover:bg-accent flex justify-between items-center border-b last:border-0">
                       <div>
-                        <div className="font-medium">{p.nome}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {p.nome}
+                          {p.vendido_por_peso && <span className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded"><Scale className="h-3 w-3" /> peso</span>}
+                        </div>
                         <div className="text-xs text-muted-foreground">{p.codigo_barras ?? "—"} · estoque: {Number(p.estoque_atual)} {p.unidade}</div>
                       </div>
-                      <div className="font-bold text-primary">{brl(p.preco_venda)}</div>
+                      <div className="font-bold text-primary">{brl(p.preco_venda)}{p.vendido_por_peso ? "/kg" : ""}</div>
                     </button>
                   ))}
                 </div>
@@ -302,16 +350,37 @@ function PDVPage() {
                 {carrinho.map((it) => (
                   <div key={it.produto_id} className="flex items-center gap-3 p-3 border rounded-md hover:bg-accent/30">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{it.produto_nome}</div>
-                      <div className="text-xs text-muted-foreground">{brl(it.preco_unitario)} / {it.unidade}</div>
+                      <div className="font-medium truncate flex items-center gap-2">
+                        {it.produto_nome}
+                        {it.vendido_por_peso && <Scale className="h-3 w-3 text-primary shrink-0" />}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {brl(it.preco_unitario)} / {it.vendido_por_peso ? "kg" : it.unidade}
+                        {it.vendido_por_peso && <> · <strong>{(it.quantidade * 1000).toFixed(0)} g</strong> ({it.quantidade.toFixed(3)} kg)</>}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade - 1)}><Minus className="h-3 w-3" /></Button>
-                      <Input type="number" step="0.001" value={it.quantidade}
-                        onChange={(e) => setQtd(it.produto_id, Number(e.target.value))}
-                        className="w-16 h-8 text-center" />
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade + 1)}><Plus className="h-3 w-3" /></Button>
-                    </div>
+                    {it.vendido_por_peso ? (
+                      <Button size="sm" variant="outline" className="h-8" onClick={() => {
+                        const p = produtos.find((x) => x.id === it.produto_id);
+                        if (!p) return;
+                        // Reabre modal de peso pré-preenchido; remove o item atual e re-adiciona
+                        setCarrinho((prev) => prev.filter((x) => x.produto_id !== it.produto_id));
+                        setPesoProduto(p as ProdutoPDV);
+                        setPesoValor(String(it.quantidade));
+                        setPesoUnidade("kg");
+                        setPesoOpen(true);
+                      }}>
+                        <Scale className="h-3 w-3 mr-1" /> Alterar peso
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade - 1)}><Minus className="h-3 w-3" /></Button>
+                        <Input type="number" step="0.001" value={it.quantidade}
+                          onChange={(e) => setQtd(it.produto_id, Number(e.target.value))}
+                          className="w-16 h-8 text-center" />
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade + 1)}><Plus className="h-3 w-3" /></Button>
+                      </div>
+                    )}
                     <div className="w-24 text-right font-bold">{brl(it.quantidade * it.preco_unitario)}</div>
                     <Button size="icon" variant="ghost" onClick={() => remover(it.produto_id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
@@ -433,6 +502,70 @@ function PDVPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setPagOpen(false)}>Voltar</Button>
             <Button onClick={() => finalizar.mutate()} disabled={finalizar.isPending} size="lg">Confirmar venda</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de peso (produtos vendidos por peso) */}
+      <Dialog open={pesoOpen} onOpenChange={(v) => { if (!v) { setPesoOpen(false); setPesoProduto(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Scale className="h-5 w-5 text-primary" /> Informe o peso</DialogTitle>
+          </DialogHeader>
+          {pesoProduto && (
+            <div className="space-y-3">
+              <div className="bg-muted p-3 rounded-md">
+                <div className="font-medium">{pesoProduto.nome}</div>
+                <div className="text-xs text-muted-foreground">
+                  Preço: <strong>{brl(pesoProduto.preco_venda)}/kg</strong> · Estoque: {Number(pesoProduto.estoque_atual)} kg
+                </div>
+              </div>
+              <div>
+                <Label>Peso</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number" step="0.001" inputMode="decimal" autoFocus
+                    value={pesoValor} onChange={(e) => setPesoValor(e.target.value)}
+                    placeholder={pesoUnidade === "kg" ? "Ex: 0,500 ou 2,5" : "Ex: 500 ou 2500"}
+                    className="text-lg h-11"
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmarPeso(); } }}
+                  />
+                  <Select value={pesoUnidade} onValueChange={(v) => setPesoUnidade(v as "kg" | "g")}>
+                    <SelectTrigger className="w-24 h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="g">g</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {pesoUnidade === "kg"
+                    ? [0.1, 0.25, 0.5, 1, 1.5, 2].map((v) => (
+                        <Button key={v} size="sm" type="button" variant="outline" className="text-xs h-7"
+                          onClick={() => setPesoValor(String(v))}>{v} kg</Button>
+                      ))
+                    : [100, 200, 250, 500, 750, 1000].map((v) => (
+                        <Button key={v} size="sm" type="button" variant="outline" className="text-xs h-7"
+                          onClick={() => setPesoValor(String(v))}>{v} g</Button>
+                      ))}
+                </div>
+              </div>
+              {(() => {
+                const v = Number((pesoValor || "0").replace(",", "."));
+                const kg = pesoUnidade === "g" ? v / 1000 : v;
+                const total = kg * Number(pesoProduto.preco_venda);
+                return (
+                  <div className="flex justify-between items-baseline border-t pt-3">
+                    <span className="text-sm">Total do item</span>
+                    <span className="text-2xl font-bold text-primary">{brl(total)}</span>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPesoOpen(false); setPesoProduto(null); }}>Cancelar</Button>
+            <Button onClick={confirmarPeso}>Adicionar ao carrinho</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
