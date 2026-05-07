@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      assinaturas: {
+        Row: {
+          ativa: boolean
+          comercio_id: string
+          created_at: string
+          data_inicio: string
+          dias_carencia: number
+          id: string
+          observacoes: string | null
+          proximo_vencimento: string
+          ultimo_pagamento: string | null
+          updated_at: string
+          valor_mensal: number
+        }
+        Insert: {
+          ativa?: boolean
+          comercio_id: string
+          created_at?: string
+          data_inicio?: string
+          dias_carencia?: number
+          id?: string
+          observacoes?: string | null
+          proximo_vencimento?: string
+          ultimo_pagamento?: string | null
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Update: {
+          ativa?: boolean
+          comercio_id?: string
+          created_at?: string
+          data_inicio?: string
+          dias_carencia?: number
+          id?: string
+          observacoes?: string | null
+          proximo_vencimento?: string
+          ultimo_pagamento?: string | null
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Relationships: []
+      }
+      auditoria: {
+        Row: {
+          acao: string
+          comercio_id: string
+          created_at: string
+          detalhes: Json | null
+          entidade: string
+          entidade_id: string | null
+          id: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          comercio_id?: string
+          created_at?: string
+          detalhes?: Json | null
+          entidade: string
+          entidade_id?: string | null
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          comercio_id?: string
+          created_at?: string
+          detalhes?: Json | null
+          entidade?: string
+          entidade_id?: string | null
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       caixas: {
         Row: {
           aberto_em: string
@@ -653,6 +731,45 @@ export type Database = {
           },
         ]
       }
+      pagamentos_assinatura: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          data_pagamento: string
+          forma: string | null
+          id: string
+          observacoes: string | null
+          proximo_vencimento: string
+          referente_a: string
+          registrado_por: string | null
+          valor: number
+        }
+        Insert: {
+          comercio_id: string
+          created_at?: string
+          data_pagamento?: string
+          forma?: string | null
+          id?: string
+          observacoes?: string | null
+          proximo_vencimento: string
+          referente_a: string
+          registrado_por?: string | null
+          valor: number
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          data_pagamento?: string
+          forma?: string | null
+          id?: string
+          observacoes?: string | null
+          proximo_vencimento?: string
+          referente_a?: string
+          registrado_por?: string | null
+          valor?: number
+        }
+        Relationships: []
+      }
       pagamentos_fiado: {
         Row: {
           caixa_id: string | null
@@ -804,6 +921,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sessoes_acesso: {
+        Row: {
+          comercio_id: string | null
+          duracao_segundos: number | null
+          email: string | null
+          encerrada_em: string | null
+          id: string
+          iniciada_em: string
+          ip: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          comercio_id?: string | null
+          duracao_segundos?: number | null
+          email?: string | null
+          encerrada_em?: string | null
+          id?: string
+          iniciada_em?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          comercio_id?: string | null
+          duracao_segundos?: number | null
+          email?: string | null
+          encerrada_em?: string | null
+          id?: string
+          iniciada_em?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           comercio_id: string
@@ -915,6 +1068,7 @@ export type Database = {
     }
     Functions: {
       caixa_aberto: { Args: never; Returns: string }
+      comercio_status: { Args: { _comercio_id: string }; Returns: string }
       current_user_comercio: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -928,13 +1082,15 @@ export type Database = {
         Args: { _comercio_id: string; _user_id: string }
         Returns: boolean
       }
+      is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      pode_escrever: { Args: { _comercio_id: string }; Returns: boolean }
       seed_comercio_defaults: {
         Args: { _comercio_id: string }
         Returns: undefined
       }
     }
     Enums: {
-      app_role: "dono" | "operador"
+      app_role: "dono" | "operador" | "superadmin"
       forma_pagamento: "dinheiro" | "debito" | "credito" | "pix" | "fiado"
       movimentacao_motivo:
         | "compra"
@@ -1086,7 +1242,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["dono", "operador"],
+      app_role: ["dono", "operador", "superadmin"],
       forma_pagamento: ["dinheiro", "debito", "credito", "pix", "fiado"],
       movimentacao_motivo: [
         "compra",
