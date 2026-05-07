@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { LogOut, Store } from "lucide-react";
 import { aplicarTema, carregarTema } from "@/lib/tema";
+import { BannerAssinatura } from "@/components/BannerAssinatura";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -116,6 +117,7 @@ function AppShell() {
               <LogOut className="h-4 w-4 mr-1" /> Sair
             </Button>
           </header>
+          <BannerAssinatura />
           <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
             <Outlet />
           </main>
