@@ -13,13 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, ShieldCheck } from "lucide-react";
 
+const ADMIN_EMAIL = "natanmtf@gmail.com";
+
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Controle de PDVs" }] }),
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "superadmin").maybeSingle();
-    if (!data) throw redirect({ to: "/" });
+    if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) throw redirect({ to: "/" });
   },
   component: AdminPage,
 });
