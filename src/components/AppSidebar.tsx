@@ -14,7 +14,10 @@ import {
   Settings,
   Building2,
   ArrowLeftRight,
+  ShieldCheck,
+  Wallet,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Sidebar,
   SidebarContent,
@@ -54,10 +57,15 @@ const movimentos = [
   { title: "Fiado / Crediário", url: "/fiado", icon: CreditCard },
 ];
 
-const sistema = [
+const sistema: NavItem[] = [
   { title: "Meu Comércio", url: "/comercio", icon: Building2 },
+  { title: "Minha Assinatura", url: "/assinatura", icon: Wallet },
   { title: "Importar / Exportar", url: "/importar-exportar", icon: ArrowLeftRight },
   { title: "Impressão", url: "/configuracoes", icon: Settings },
+];
+
+const adminItems: NavItem[] = [
+  { title: "Controle de PDVs", url: "/admin", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
