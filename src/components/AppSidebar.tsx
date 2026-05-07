@@ -72,6 +72,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { isSuperadmin } = useAuth();
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   const Section = ({ label, items }: { label: string; items: NavItem[] }) => (
@@ -126,6 +127,7 @@ export function AppSidebar() {
         <Section label="Cadastros" items={cadastros} />
         <Section label="Movimentos" items={movimentos} />
         <Section label="Sistema" items={sistema} />
+        {isSuperadmin && <Section label="Admin" items={adminItems} />}
       </SidebarContent>
     </Sidebar>
   );
