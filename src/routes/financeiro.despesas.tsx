@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 
 export const Route = createFileRoute("/financeiro/despesas")({
   component: DespesasPage,
@@ -22,6 +23,7 @@ type Despesa = {
   id: string;
   descricao: string;
   categoria_id: string | null;
+  centro_custo_id: string | null;
   valor: number;
   data: string;
   forma_pagamento: string | null;
@@ -38,14 +40,12 @@ function DespesasPage() {
     queryFn: async () =>
       ((await supabase
         .from("despesas")
-        .select("*, categorias_financeiras(nome, cor)")
+        .select("*, categorias_financeiras(nome, cor), centros_custo(nome)")
         .order("data", { ascending: false })).data ?? []) as any[],
   });
-  const { data: categorias = [] } = useQuery({
-    queryKey: ["cat-fin-despesa"],
-    queryFn: async () =>
-      (await supabase.from("categorias_financeiras").select("id, nome, cor").eq("tipo", "despesa").order("nome")).data ?? [],
-  });
+  const { data: categorias = [] } = useCategoriasFinanceiras("despesa");
+  const { data: centros = [] } = useCentrosCusto();
+  const { data: formas = [] } = useFormasPagamento();
 
   const total = lista.reduce((s, d) => s + Number(d.valor), 0);
 
@@ -54,6 +54,7 @@ function DespesasPage() {
       const payload = {
         descricao: form.descricao!,
         categoria_id: form.categoria_id || null,
+        centro_custo_id: form.centro_custo_id || null,
         valor: Number(form.valor),
         data: form.data!,
         forma_pagamento: form.forma_pagamento || null,
@@ -95,17 +96,18 @@ function DespesasPage() {
         <CardContent className="p-0">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>Categoria</TableHead>
+              <TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>Categoria</TableHead><TableHead>Centro de custo</TableHead>
               <TableHead>Forma</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Ações</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {lista.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhuma despesa</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhuma despesa</TableCell></TableRow>
               ) : lista.map((d) => (
                 <TableRow key={d.id}>
                   <TableCell>{dtShort(d.data)}</TableCell>
                   <TableCell className="font-medium">{d.descricao}</TableCell>
                   <TableCell>{d.categorias_financeiras?.nome ?? "—"}</TableCell>
+                  <TableCell>{d.centros_custo?.nome ?? "—"}</TableCell>
                   <TableCell>{d.forma_pagamento ?? "—"}</TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{brl(d.valor)}</TableCell>
                   <TableCell className="text-right">
@@ -128,6 +130,8 @@ function DespesasPage() {
         onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }}
         edit={edit}
         categorias={categorias}
+        centros={centros}
+        formas={formas}
         onSave={(f: Partial<Despesa>) => save.mutate(f)}
         saving={save.isPending}
       />
@@ -135,7 +139,7 @@ function DespesasPage() {
   );
 }
 
-function DespesaDialog({ open, onOpenChange, edit, categorias, onSave, saving }: any) {
+function DespesaDialog({ open, onOpenChange, edit, categorias, centros, formas, onSave, saving }: any) {
   const [form, setForm] = useState<Partial<Despesa>>({});
   const setF = (k: keyof Despesa, v: any) => setForm((p) => ({ ...p, [k]: v }));
   if (open && form.descricao === undefined && edit) setForm(edit);
@@ -150,14 +154,29 @@ function DespesaDialog({ open, onOpenChange, edit, categorias, onSave, saving }:
             <div><Label>Valor *</Label><Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setF("valor", e.target.value)} /></div>
             <div><Label>Data *</Label><Input type="date" value={form.data ?? new Date().toISOString().slice(0,10)} onChange={(e) => setF("data", e.target.value)} /></div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Categoria</Label>
+              <Select value={form.categoria_id ?? "none"} onValueChange={(v) => setF("categoria_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent><SelectItem value="none">—</SelectItem>{categorias.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Centro de custo</Label>
+              <Select value={form.centro_custo_id ?? "none"} onValueChange={(v) => setF("centro_custo_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent><SelectItem value="none">—</SelectItem>{centros.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
           <div>
-            <Label>Categoria</Label>
-            <Select value={form.categoria_id ?? "none"} onValueChange={(v) => setF("categoria_id", v === "none" ? null : v)}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent><SelectItem value="none">—</SelectItem>{categorias.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+            <Label>Forma de pagamento</Label>
+            <Select value={form.forma_pagamento ?? "none"} onValueChange={(v) => setF("forma_pagamento", v === "none" ? null : v)}>
+              <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <SelectContent><SelectItem value="none">—</SelectItem>{formas.map((f: any) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>Forma de pagamento</Label><Input value={form.forma_pagamento ?? ""} onChange={(e) => setF("forma_pagamento", e.target.value)} /></div>
           <div><Label>Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setF("observacoes", e.target.value)} rows={2} /></div>
         </div>
         <DialogFooter>

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { Plus, CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 
 export const Route = createFileRoute("/financeiro/contas-pagar")({
   component: ContasPagarPage,
@@ -24,6 +25,7 @@ type ContaPagar = {
   descricao: string;
   fornecedor_id: string | null;
   categoria_id: string | null;
+  centro_custo_id: string | null;
   valor: number;
   data_vencimento: string;
   data_pagamento: string | null;
@@ -43,7 +45,7 @@ function ContasPagarPage() {
     queryFn: async () =>
       ((await supabase
         .from("contas_pagar")
-        .select("*, fornecedores(nome), categorias_financeiras(nome, cor)")
+        .select("*, fornecedores(nome), categorias_financeiras(nome, cor), centros_custo(nome)")
         .order("data_vencimento")).data ?? []) as any[],
   });
 
@@ -51,11 +53,9 @@ function ContasPagarPage() {
     queryKey: ["fornecedores-min"],
     queryFn: async () => (await supabase.from("fornecedores").select("id, nome").order("nome")).data ?? [],
   });
-  const { data: categorias = [] } = useQuery({
-    queryKey: ["cat-fin-despesa"],
-    queryFn: async () =>
-      (await supabase.from("categorias_financeiras").select("id, nome, cor").eq("tipo", "despesa").order("nome")).data ?? [],
-  });
+  const { data: categorias = [] } = useCategoriasFinanceiras("despesa");
+  const { data: centros = [] } = useCentrosCusto();
+  const { data: formas = [] } = useFormasPagamento();
 
   const hoje = new Date().toISOString().slice(0, 10);
   const exibidas = lista.filter((c) => {
@@ -72,6 +72,7 @@ function ContasPagarPage() {
         descricao: form.descricao!,
         fornecedor_id: form.fornecedor_id || null,
         categoria_id: form.categoria_id || null,
+        centro_custo_id: form.centro_custo_id || null,
         valor: Number(form.valor),
         data_vencimento: form.data_vencimento!,
         status: form.status ?? "pendente",
@@ -208,6 +209,8 @@ function ContasPagarPage() {
         edit={edit}
         fornecedores={fornecedores}
         categorias={categorias}
+        centros={centros}
+        formas={formas}
         onSave={(f) => save.mutate(f)}
         saving={save.isPending}
       />
@@ -216,20 +219,21 @@ function ContasPagarPage() {
 }
 
 function ContaPagarDialog({
-  open, onOpenChange, edit, fornecedores, categorias, onSave, saving,
+  open, onOpenChange, edit, fornecedores, categorias, centros, formas, onSave, saving,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   edit: ContaPagar | null;
   fornecedores: any[];
   categorias: any[];
+  centros: any[];
+  formas: any[];
   onSave: (f: Partial<ContaPagar>) => void;
   saving: boolean;
 }) {
   const [form, setForm] = useState<Partial<ContaPagar>>({});
   const setF = <K extends keyof ContaPagar>(k: K, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
-  // sync when opening
   if (open && form.descricao === undefined && edit) {
     setForm(edit);
   }
@@ -270,7 +274,7 @@ function ContaPagarDialog({
             <div>
               <Label>Categoria</Label>
               <Select value={form.categoria_id ?? "none"} onValueChange={(v) => setF("categoria_id", v === "none" ? null : v)}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">—</SelectItem>
                   {categorias.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
@@ -278,9 +282,27 @@ function ContaPagarDialog({
               </Select>
             </div>
           </div>
-          <div>
-            <Label>Forma de pagamento</Label>
-            <Input value={form.forma_pagamento ?? ""} onChange={(e) => setF("forma_pagamento", e.target.value)} placeholder="Ex: PIX, Boleto…" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Centro de custo</Label>
+              <Select value={form.centro_custo_id ?? "none"} onValueChange={(v) => setF("centro_custo_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {centros.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Forma de pagamento</Label>
+              <Select value={form.forma_pagamento ?? "none"} onValueChange={(v) => setF("forma_pagamento", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {formas.map((f: any) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div>
             <Label>Observações</Label>
