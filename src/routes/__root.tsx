@@ -40,7 +40,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { title: "Mercadinho — PDV e Gestão" },
       { name: "description", content: "Sistema completo de PDV, estoque, clientes, fornecedores e fiado para mercadinhos." },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
