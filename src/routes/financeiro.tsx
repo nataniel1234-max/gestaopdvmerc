@@ -8,6 +8,8 @@ export const Route = createFileRoute("/financeiro")({
 
 const tabs = [
   { to: "/financeiro", label: "Visão Geral", exact: true },
+  { to: "/financeiro/dre", label: "DRE" },
+  { to: "/financeiro/balanco", label: "Balanço" },
   { to: "/financeiro/contas-pagar", label: "Contas a Pagar" },
   { to: "/financeiro/contas-receber", label: "Contas a Receber" },
   { to: "/financeiro/despesas", label: "Despesas" },
