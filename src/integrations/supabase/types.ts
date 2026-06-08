@@ -1189,6 +1189,63 @@ export type Database = {
           },
         ]
       }
+      perdas: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          custo_unitario: number
+          data: string
+          id: string
+          motivo: Database["public"]["Enums"]["motivo_perda"]
+          observacoes: string | null
+          produto_id: string
+          quantidade: number
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          comercio_id?: string
+          created_at?: string
+          custo_unitario?: number
+          data?: string
+          id?: string
+          motivo: Database["public"]["Enums"]["motivo_perda"]
+          observacoes?: string | null
+          produto_id: string
+          quantidade: number
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          custo_unitario?: number
+          data?: string
+          id?: string
+          motivo?: Database["public"]["Enums"]["motivo_perda"]
+          observacoes?: string | null
+          produto_id?: string
+          quantidade?: number
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perdas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "perdas_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
@@ -1204,6 +1261,7 @@ export type Database = {
           nome: string
           preco_custo: number
           preco_venda: number
+          setor: Database["public"]["Enums"]["setor_produto"]
           unidade: string
           updated_at: string
           vendido_por_peso: boolean
@@ -1222,6 +1280,7 @@ export type Database = {
           nome: string
           preco_custo?: number
           preco_venda?: number
+          setor?: Database["public"]["Enums"]["setor_produto"]
           unidade?: string
           updated_at?: string
           vendido_por_peso?: boolean
@@ -1240,6 +1299,7 @@ export type Database = {
           nome?: string
           preco_custo?: number
           preco_venda?: number
+          setor?: Database["public"]["Enums"]["setor_produto"]
           unidade?: string
           updated_at?: string
           vendido_por_peso?: boolean
@@ -1456,6 +1516,7 @@ export type Database = {
     Enums: {
       app_role: "dono" | "operador" | "superadmin"
       forma_pagamento: "dinheiro" | "debito" | "credito" | "pix" | "fiado"
+      motivo_perda: "vencimento" | "quebra" | "roubo" | "avaria" | "outro"
       movimentacao_motivo:
         | "compra"
         | "venda"
@@ -1471,6 +1532,15 @@ export type Database = {
         | "saida_troca"
         | "saida_perda"
         | "ajuste"
+      setor_produto:
+        | "hortifruti"
+        | "frigorifico"
+        | "cereais"
+        | "lanchonete"
+        | "assados"
+        | "mercearia"
+        | "conveniencia"
+        | "outros"
       status_conta_pagar: "pendente" | "paga" | "atrasada" | "cancelada"
       status_conta_receber: "pendente" | "recebida" | "atrasada" | "cancelada"
       status_divida: "ativa" | "quitada" | "renegociada"
@@ -1612,6 +1682,7 @@ export const Constants = {
     Enums: {
       app_role: ["dono", "operador", "superadmin"],
       forma_pagamento: ["dinheiro", "debito", "credito", "pix", "fiado"],
+      motivo_perda: ["vencimento", "quebra", "roubo", "avaria", "outro"],
       movimentacao_motivo: [
         "compra",
         "venda",
@@ -1628,6 +1699,16 @@ export const Constants = {
         "saida_troca",
         "saida_perda",
         "ajuste",
+      ],
+      setor_produto: [
+        "hortifruti",
+        "frigorifico",
+        "cereais",
+        "lanchonete",
+        "assados",
+        "mercearia",
+        "conveniencia",
+        "outros",
       ],
       status_conta_pagar: ["pendente", "paga", "atrasada", "cancelada"],
       status_conta_receber: ["pendente", "recebida", "atrasada", "cancelada"],
