@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { Plus, CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { useCategoriasFinanceiras, useFormasPagamento } from "@/lib/predefinicoes";
 
 export const Route = createFileRoute("/financeiro/contas-receber")({
   component: ContasReceberPage,
