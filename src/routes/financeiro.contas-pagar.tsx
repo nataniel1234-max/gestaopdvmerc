@@ -45,7 +45,7 @@ function ContasPagarPage() {
     queryFn: async () =>
       ((await supabase
         .from("contas_pagar")
-        .select("*, fornecedores(nome), categorias_financeiras(nome, cor)")
+        .select("*, fornecedores(nome), categorias_financeiras(nome, cor), centros_custo(nome)")
         .order("data_vencimento")).data ?? []) as any[],
   });
 
@@ -53,11 +53,9 @@ function ContasPagarPage() {
     queryKey: ["fornecedores-min"],
     queryFn: async () => (await supabase.from("fornecedores").select("id, nome").order("nome")).data ?? [],
   });
-  const { data: categorias = [] } = useQuery({
-    queryKey: ["cat-fin-despesa"],
-    queryFn: async () =>
-      (await supabase.from("categorias_financeiras").select("id, nome, cor").eq("tipo", "despesa").order("nome")).data ?? [],
-  });
+  const { data: categorias = [] } = useCategoriasFinanceiras("despesa");
+  const { data: centros = [] } = useCentrosCusto();
+  const { data: formas = [] } = useFormasPagamento();
 
   const hoje = new Date().toISOString().slice(0, 10);
   const exibidas = lista.filter((c) => {
@@ -74,6 +72,7 @@ function ContasPagarPage() {
         descricao: form.descricao!,
         fornecedor_id: form.fornecedor_id || null,
         categoria_id: form.categoria_id || null,
+        centro_custo_id: form.centro_custo_id || null,
         valor: Number(form.valor),
         data_vencimento: form.data_vencimento!,
         status: form.status ?? "pendente",
