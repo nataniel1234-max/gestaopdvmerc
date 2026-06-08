@@ -23,6 +23,7 @@ type Despesa = {
   id: string;
   descricao: string;
   categoria_id: string | null;
+  centro_custo_id: string | null;
   valor: number;
   data: string;
   forma_pagamento: string | null;
