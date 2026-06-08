@@ -173,12 +173,12 @@ function ContasReceberPage() {
         </CardContent>
       </Card>
 
-      <CrDialog open={open} onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }} edit={edit} clientes={clientes} categorias={categorias} onSave={(f: Partial<ContaReceber>) => save.mutate(f)} saving={save.isPending} />
+      <CrDialog open={open} onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }} edit={edit} clientes={clientes} categorias={categorias} formas={formas} onSave={(f: Partial<ContaReceber>) => save.mutate(f)} saving={save.isPending} />
     </div>
   );
 }
 
-function CrDialog({ open, onOpenChange, edit, clientes, categorias, onSave, saving }: any) {
+function CrDialog({ open, onOpenChange, edit, clientes, categorias, formas, onSave, saving }: any) {
   const [form, setForm] = useState<Partial<ContaReceber>>({});
   const setF = (k: keyof ContaReceber, v: any) => setForm((p) => ({ ...p, [k]: v }));
   if (open && form.descricao === undefined && edit) setForm(edit);
@@ -204,12 +204,18 @@ function CrDialog({ open, onOpenChange, edit, clientes, categorias, onSave, savi
             <div>
               <Label>Categoria</Label>
               <Select value={form.categoria_id ?? "none"} onValueChange={(v) => setF("categoria_id", v === "none" ? null : v)}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
                 <SelectContent><SelectItem value="none">—</SelectItem>{categorias.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
-          <div><Label>Forma de recebimento</Label><Input value={form.forma_recebimento ?? ""} onChange={(e) => setF("forma_recebimento", e.target.value)} placeholder="Ex: PIX, Boleto…" /></div>
+          <div>
+            <Label>Forma de recebimento</Label>
+            <Select value={form.forma_recebimento ?? "none"} onValueChange={(v) => setF("forma_recebimento", v === "none" ? null : v)}>
+              <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <SelectContent><SelectItem value="none">—</SelectItem>{formas.map((f: any) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
           <div><Label>Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setF("observacoes", e.target.value)} rows={2} /></div>
         </div>
         <DialogFooter>
