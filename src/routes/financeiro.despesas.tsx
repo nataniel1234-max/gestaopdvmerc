@@ -125,10 +125,10 @@ function DespesasPage() {
 
       <DespesaDialog
         open={open}
-        onOpenChange={(v) => { setOpen(v); if (!v) setEdit(null); }}
+        onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }}
         edit={edit}
         categorias={categorias}
-        onSave={(f) => save.mutate(f)}
+        onSave={(f: Partial<Despesa>) => save.mutate(f)}
         saving={save.isPending}
       />
     </div>

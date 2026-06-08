@@ -154,9 +154,9 @@ function DividasPage() {
 
       <DividaDialog
         open={open}
-        onOpenChange={(v) => { setOpen(v); if (!v) setEdit(null); }}
+        onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }}
         edit={edit}
-        onSave={(f) => save.mutate(f)}
+        onSave={(f: Partial<Divida>) => save.mutate(f)}
         saving={save.isPending}
       />
     </div>
