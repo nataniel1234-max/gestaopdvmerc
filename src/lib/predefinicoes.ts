@@ -41,7 +41,7 @@ export function useFormasPagamento() {
       const { data } = await supabase
         .from("comercio_formas_pagamento")
         .select("id, nome, tipo_base, ordem")
-        .eq("ativa", true)
+        .eq("ativo", true)
         .order("ordem");
       return (data ?? []) as FormaPagamento[];
     },
