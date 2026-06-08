@@ -54,6 +54,7 @@ function DespesasPage() {
       const payload = {
         descricao: form.descricao!,
         categoria_id: form.categoria_id || null,
+        centro_custo_id: form.centro_custo_id || null,
         valor: Number(form.valor),
         data: form.data!,
         forma_pagamento: form.forma_pagamento || null,
