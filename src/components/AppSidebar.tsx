@@ -16,6 +16,7 @@ import {
   ArrowLeftRight,
   ShieldCheck,
   Wallet,
+  Landmark,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -55,6 +56,10 @@ const movimentos = [
   { title: "Saída / Perda", url: "/saidas", icon: ArrowUpFromLine },
   { title: "Vendas", url: "/vendas", icon: Receipt },
   { title: "Fiado / Crediário", url: "/fiado", icon: CreditCard },
+];
+
+const financeiro: NavItem[] = [
+  { title: "Inteligência Financeira", url: "/financeiro", icon: Landmark },
 ];
 
 const sistema: NavItem[] = [
@@ -127,6 +132,7 @@ export function AppSidebar() {
         <Section label="Operação" items={operacao} />
         <Section label="Cadastros" items={cadastros} />
         <Section label="Movimentos" items={movimentos} />
+        <Section label="Financeiro" items={financeiro} />
         <Section label="Sistema" items={sistema} />
         {isAdmin && <Section label="Admin" items={adminItems} />}
       </SidebarContent>
