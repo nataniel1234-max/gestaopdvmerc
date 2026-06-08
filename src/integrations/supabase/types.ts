@@ -181,6 +181,85 @@ export type Database = {
           },
         ]
       }
+      categorias_financeiras: {
+        Row: {
+          ativa: boolean
+          comercio_id: string
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          tipo: Database["public"]["Enums"]["tipo_categoria_financeira"]
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          comercio_id?: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          tipo: Database["public"]["Enums"]["tipo_categoria_financeira"]
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          comercio_id?: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          tipo?: Database["public"]["Enums"]["tipo_categoria_financeira"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categorias_financeiras_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centros_custo: {
+        Row: {
+          ativo: boolean
+          comercio_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centros_custo_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -407,6 +486,291 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      contas_pagar: {
+        Row: {
+          categoria_id: string | null
+          centro_custo_id: string | null
+          comercio_id: string
+          created_at: string
+          data_pagamento: string | null
+          data_vencimento: string
+          descricao: string
+          forma_pagamento: string | null
+          fornecedor_id: string | null
+          id: string
+          observacoes: string | null
+          parcela_atual: number | null
+          parcelas_total: number | null
+          recorrente: boolean
+          status: Database["public"]["Enums"]["status_conta_pagar"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          centro_custo_id?: string | null
+          comercio_id?: string
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento: string
+          descricao: string
+          forma_pagamento?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          observacoes?: string | null
+          parcela_atual?: number | null
+          parcelas_total?: number | null
+          recorrente?: boolean
+          status?: Database["public"]["Enums"]["status_conta_pagar"]
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria_id?: string | null
+          centro_custo_id?: string | null
+          comercio_id?: string
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento?: string
+          descricao?: string
+          forma_pagamento?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          observacoes?: string | null
+          parcela_atual?: number | null
+          parcelas_total?: number | null
+          recorrente?: boolean
+          status?: Database["public"]["Enums"]["status_conta_pagar"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_pagar_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_pagar_centro_custo_id_fkey"
+            columns: ["centro_custo_id"]
+            isOneToOne: false
+            referencedRelation: "centros_custo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_pagar_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_pagar_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contas_receber: {
+        Row: {
+          categoria_id: string | null
+          cliente_id: string | null
+          comercio_id: string
+          created_at: string
+          data_recebimento: string | null
+          data_vencimento: string
+          descricao: string
+          forma_recebimento: string | null
+          id: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["status_conta_receber"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          cliente_id?: string | null
+          comercio_id?: string
+          created_at?: string
+          data_recebimento?: string | null
+          data_vencimento: string
+          descricao: string
+          forma_recebimento?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["status_conta_receber"]
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria_id?: string | null
+          cliente_id?: string | null
+          comercio_id?: string
+          created_at?: string
+          data_recebimento?: string | null
+          data_vencimento?: string
+          descricao?: string
+          forma_recebimento?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["status_conta_receber"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_receber_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      despesas: {
+        Row: {
+          categoria_id: string | null
+          centro_custo_id: string | null
+          comercio_id: string
+          created_at: string
+          data: string
+          descricao: string
+          forma_pagamento: string | null
+          id: string
+          observacoes: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          centro_custo_id?: string | null
+          comercio_id?: string
+          created_at?: string
+          data?: string
+          descricao: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria_id?: string | null
+          centro_custo_id?: string | null
+          comercio_id?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_centro_custo_id_fkey"
+            columns: ["centro_custo_id"]
+            isOneToOne: false
+            referencedRelation: "centros_custo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dividas: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          credor: string
+          data_inicio: string
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          parcelas_pagas: number
+          parcelas_total: number | null
+          saldo_devedor: number
+          status: Database["public"]["Enums"]["status_divida"]
+          taxa_juros_mensal: number
+          updated_at: string
+          valor_original: number
+          valor_parcela: number | null
+        }
+        Insert: {
+          comercio_id?: string
+          created_at?: string
+          credor: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          parcelas_pagas?: number
+          parcelas_total?: number | null
+          saldo_devedor: number
+          status?: Database["public"]["Enums"]["status_divida"]
+          taxa_juros_mensal?: number
+          updated_at?: string
+          valor_original: number
+          valor_parcela?: number | null
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          credor?: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          parcelas_pagas?: number
+          parcelas_total?: number | null
+          saldo_devedor?: number
+          status?: Database["public"]["Enums"]["status_divida"]
+          taxa_juros_mensal?: number
+          updated_at?: string
+          valor_original?: number
+          valor_parcela?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dividas_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fornecedores: {
         Row: {
@@ -1107,6 +1471,10 @@ export type Database = {
         | "saida_troca"
         | "saida_perda"
         | "ajuste"
+      status_conta_pagar: "pendente" | "paga" | "atrasada" | "cancelada"
+      status_conta_receber: "pendente" | "recebida" | "atrasada" | "cancelada"
+      status_divida: "ativa" | "quitada" | "renegociada"
+      tipo_categoria_financeira: "receita" | "despesa"
       tipo_mov_caixa:
         | "abertura"
         | "sangria"
@@ -1261,6 +1629,10 @@ export const Constants = {
         "saida_perda",
         "ajuste",
       ],
+      status_conta_pagar: ["pendente", "paga", "atrasada", "cancelada"],
+      status_conta_receber: ["pendente", "recebida", "atrasada", "cancelada"],
+      status_divida: ["ativa", "quitada", "renegociada"],
+      tipo_categoria_financeira: ["receita", "despesa"],
       tipo_mov_caixa: [
         "abertura",
         "sangria",
