@@ -175,7 +175,7 @@ function ContasReceberPage() {
         </CardContent>
       </Card>
 
-      <CrDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEdit(null); }} edit={edit} clientes={clientes} categorias={categorias} onSave={(f) => save.mutate(f)} saving={save.isPending} />
+      <CrDialog open={open} onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }} edit={edit} clientes={clientes} categorias={categorias} onSave={(f: Partial<ContaReceber>) => save.mutate(f)} saving={save.isPending} />
     </div>
   );
 }

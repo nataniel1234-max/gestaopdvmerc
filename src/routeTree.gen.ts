@@ -28,6 +28,10 @@ import { Route as AssinaturaRouteImport } from './routes/assinatura'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FinanceiroIndexRouteImport } from './routes/financeiro.index'
+import { Route as FinanceiroDividasRouteImport } from './routes/financeiro.dividas'
+import { Route as FinanceiroDespesasRouteImport } from './routes/financeiro.despesas'
+import { Route as FinanceiroContasReceberRouteImport } from './routes/financeiro.contas-receber'
+import { Route as FinanceiroContasPagarRouteImport } from './routes/financeiro.contas-pagar'
 
 const VendasRoute = VendasRouteImport.update({
   id: '/vendas',
@@ -124,6 +128,26 @@ const FinanceiroIndexRoute = FinanceiroIndexRouteImport.update({
   path: '/',
   getParentRoute: () => FinanceiroRoute,
 } as any)
+const FinanceiroDividasRoute = FinanceiroDividasRouteImport.update({
+  id: '/dividas',
+  path: '/dividas',
+  getParentRoute: () => FinanceiroRoute,
+} as any)
+const FinanceiroDespesasRoute = FinanceiroDespesasRouteImport.update({
+  id: '/despesas',
+  path: '/despesas',
+  getParentRoute: () => FinanceiroRoute,
+} as any)
+const FinanceiroContasReceberRoute = FinanceiroContasReceberRouteImport.update({
+  id: '/contas-receber',
+  path: '/contas-receber',
+  getParentRoute: () => FinanceiroRoute,
+} as any)
+const FinanceiroContasPagarRoute = FinanceiroContasPagarRouteImport.update({
+  id: '/contas-pagar',
+  path: '/contas-pagar',
+  getParentRoute: () => FinanceiroRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -144,6 +168,10 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof RelatoriosRoute
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
+  '/financeiro/contas-pagar': typeof FinanceiroContasPagarRoute
+  '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
+  '/financeiro/despesas': typeof FinanceiroDespesasRoute
+  '/financeiro/dividas': typeof FinanceiroDividasRoute
   '/financeiro/': typeof FinanceiroIndexRoute
 }
 export interface FileRoutesByTo {
@@ -164,6 +192,10 @@ export interface FileRoutesByTo {
   '/relatorios': typeof RelatoriosRoute
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
+  '/financeiro/contas-pagar': typeof FinanceiroContasPagarRoute
+  '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
+  '/financeiro/despesas': typeof FinanceiroDespesasRoute
+  '/financeiro/dividas': typeof FinanceiroDividasRoute
   '/financeiro': typeof FinanceiroIndexRoute
 }
 export interface FileRoutesById {
@@ -186,6 +218,10 @@ export interface FileRoutesById {
   '/relatorios': typeof RelatoriosRoute
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
+  '/financeiro/contas-pagar': typeof FinanceiroContasPagarRoute
+  '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
+  '/financeiro/despesas': typeof FinanceiroDespesasRoute
+  '/financeiro/dividas': typeof FinanceiroDividasRoute
   '/financeiro/': typeof FinanceiroIndexRoute
 }
 export interface FileRouteTypes {
@@ -209,6 +245,10 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/saidas'
     | '/vendas'
+    | '/financeiro/contas-pagar'
+    | '/financeiro/contas-receber'
+    | '/financeiro/despesas'
+    | '/financeiro/dividas'
     | '/financeiro/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -229,6 +269,10 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/saidas'
     | '/vendas'
+    | '/financeiro/contas-pagar'
+    | '/financeiro/contas-receber'
+    | '/financeiro/despesas'
+    | '/financeiro/dividas'
     | '/financeiro'
   id:
     | '__root__'
@@ -250,6 +294,10 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/saidas'
     | '/vendas'
+    | '/financeiro/contas-pagar'
+    | '/financeiro/contas-receber'
+    | '/financeiro/despesas'
+    | '/financeiro/dividas'
     | '/financeiro/'
   fileRoutesById: FileRoutesById
 }
@@ -409,14 +457,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinanceiroIndexRouteImport
       parentRoute: typeof FinanceiroRoute
     }
+    '/financeiro/dividas': {
+      id: '/financeiro/dividas'
+      path: '/dividas'
+      fullPath: '/financeiro/dividas'
+      preLoaderRoute: typeof FinanceiroDividasRouteImport
+      parentRoute: typeof FinanceiroRoute
+    }
+    '/financeiro/despesas': {
+      id: '/financeiro/despesas'
+      path: '/despesas'
+      fullPath: '/financeiro/despesas'
+      preLoaderRoute: typeof FinanceiroDespesasRouteImport
+      parentRoute: typeof FinanceiroRoute
+    }
+    '/financeiro/contas-receber': {
+      id: '/financeiro/contas-receber'
+      path: '/contas-receber'
+      fullPath: '/financeiro/contas-receber'
+      preLoaderRoute: typeof FinanceiroContasReceberRouteImport
+      parentRoute: typeof FinanceiroRoute
+    }
+    '/financeiro/contas-pagar': {
+      id: '/financeiro/contas-pagar'
+      path: '/contas-pagar'
+      fullPath: '/financeiro/contas-pagar'
+      preLoaderRoute: typeof FinanceiroContasPagarRouteImport
+      parentRoute: typeof FinanceiroRoute
+    }
   }
 }
 
 interface FinanceiroRouteChildren {
+  FinanceiroContasPagarRoute: typeof FinanceiroContasPagarRoute
+  FinanceiroContasReceberRoute: typeof FinanceiroContasReceberRoute
+  FinanceiroDespesasRoute: typeof FinanceiroDespesasRoute
+  FinanceiroDividasRoute: typeof FinanceiroDividasRoute
   FinanceiroIndexRoute: typeof FinanceiroIndexRoute
 }
 
 const FinanceiroRouteChildren: FinanceiroRouteChildren = {
+  FinanceiroContasPagarRoute: FinanceiroContasPagarRoute,
+  FinanceiroContasReceberRoute: FinanceiroContasReceberRoute,
+  FinanceiroDespesasRoute: FinanceiroDespesasRoute,
+  FinanceiroDividasRoute: FinanceiroDividasRoute,
   FinanceiroIndexRoute: FinanceiroIndexRoute,
 }
 
