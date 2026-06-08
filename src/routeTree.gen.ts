@@ -36,6 +36,7 @@ import { Route as FinanceiroDespesasRouteImport } from './routes/financeiro.desp
 import { Route as FinanceiroCurvaAbcRouteImport } from './routes/financeiro.curva-abc'
 import { Route as FinanceiroContasReceberRouteImport } from './routes/financeiro.contas-receber'
 import { Route as FinanceiroContasPagarRouteImport } from './routes/financeiro.contas-pagar'
+import { Route as FinanceiroClassificacaoRouteImport } from './routes/financeiro.classificacao'
 import { Route as FinanceiroBalancoRouteImport } from './routes/financeiro.balanco'
 
 const VendasRoute = VendasRouteImport.update({
@@ -173,6 +174,11 @@ const FinanceiroContasPagarRoute = FinanceiroContasPagarRouteImport.update({
   path: '/contas-pagar',
   getParentRoute: () => FinanceiroRoute,
 } as any)
+const FinanceiroClassificacaoRoute = FinanceiroClassificacaoRouteImport.update({
+  id: '/classificacao',
+  path: '/classificacao',
+  getParentRoute: () => FinanceiroRoute,
+} as any)
 const FinanceiroBalancoRoute = FinanceiroBalancoRouteImport.update({
   id: '/balanco',
   path: '/balanco',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
   '/financeiro/balanco': typeof FinanceiroBalancoRoute
+  '/financeiro/classificacao': typeof FinanceiroClassificacaoRoute
   '/financeiro/contas-pagar': typeof FinanceiroContasPagarRoute
   '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
   '/financeiro/curva-abc': typeof FinanceiroCurvaAbcRoute
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
   '/financeiro/balanco': typeof FinanceiroBalancoRoute
+  '/financeiro/classificacao': typeof FinanceiroClassificacaoRoute
   '/financeiro/contas-pagar': typeof FinanceiroContasPagarRoute
   '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
   '/financeiro/curva-abc': typeof FinanceiroCurvaAbcRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/saidas': typeof SaidasRoute
   '/vendas': typeof VendasRoute
   '/financeiro/balanco': typeof FinanceiroBalancoRoute
+  '/financeiro/classificacao': typeof FinanceiroClassificacaoRoute
   '/financeiro/contas-pagar': typeof FinanceiroContasPagarRoute
   '/financeiro/contas-receber': typeof FinanceiroContasReceberRoute
   '/financeiro/curva-abc': typeof FinanceiroCurvaAbcRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/saidas'
     | '/vendas'
     | '/financeiro/balanco'
+    | '/financeiro/classificacao'
     | '/financeiro/contas-pagar'
     | '/financeiro/contas-receber'
     | '/financeiro/curva-abc'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/saidas'
     | '/vendas'
     | '/financeiro/balanco'
+    | '/financeiro/classificacao'
     | '/financeiro/contas-pagar'
     | '/financeiro/contas-receber'
     | '/financeiro/curva-abc'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/saidas'
     | '/vendas'
     | '/financeiro/balanco'
+    | '/financeiro/classificacao'
     | '/financeiro/contas-pagar'
     | '/financeiro/contas-receber'
     | '/financeiro/curva-abc'
@@ -573,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinanceiroContasPagarRouteImport
       parentRoute: typeof FinanceiroRoute
     }
+    '/financeiro/classificacao': {
+      id: '/financeiro/classificacao'
+      path: '/classificacao'
+      fullPath: '/financeiro/classificacao'
+      preLoaderRoute: typeof FinanceiroClassificacaoRouteImport
+      parentRoute: typeof FinanceiroRoute
+    }
     '/financeiro/balanco': {
       id: '/financeiro/balanco'
       path: '/balanco'
@@ -585,6 +604,7 @@ declare module '@tanstack/react-router' {
 
 interface FinanceiroRouteChildren {
   FinanceiroBalancoRoute: typeof FinanceiroBalancoRoute
+  FinanceiroClassificacaoRoute: typeof FinanceiroClassificacaoRoute
   FinanceiroContasPagarRoute: typeof FinanceiroContasPagarRoute
   FinanceiroContasReceberRoute: typeof FinanceiroContasReceberRoute
   FinanceiroCurvaAbcRoute: typeof FinanceiroCurvaAbcRoute
@@ -598,6 +618,7 @@ interface FinanceiroRouteChildren {
 
 const FinanceiroRouteChildren: FinanceiroRouteChildren = {
   FinanceiroBalancoRoute: FinanceiroBalancoRoute,
+  FinanceiroClassificacaoRoute: FinanceiroClassificacaoRoute,
   FinanceiroContasPagarRoute: FinanceiroContasPagarRoute,
   FinanceiroContasReceberRoute: FinanceiroContasReceberRoute,
   FinanceiroCurvaAbcRoute: FinanceiroCurvaAbcRoute,
