@@ -29,13 +29,12 @@ function DREPage() {
     queryFn: async () =>
       (await supabase
         .from("vendas")
-        .select("id, total, desconto, status, created_at")
+        .select("id, total, desconto, cancelada, created_at")
         .gte("created_at", `${inicio}T00:00:00`)
         .lte("created_at", `${fim}T23:59:59`)
-        .neq("status", "cancelada")).data ?? [],
+        .eq("cancelada", false)).data ?? [],
   });
 
-  // Itens de venda (para CMV estimado pelo custo do produto)
   const vendaIds = vendas.map((v) => v.id);
   const { data: itens = [] } = useQuery({
     queryKey: ["dre-itens", vendaIds.length, inicio, fim],
@@ -43,11 +42,19 @@ function DREPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("itens_venda")
-        .select("quantidade, preco_unitario, custo_unitario")
+        .select("quantidade, preco_unitario, produto_id")
         .in("venda_id", vendaIds);
       return data ?? [];
     },
   });
+
+  const produtoIds = Array.from(new Set(itens.map((i) => i.produto_id).filter(Boolean) as string[]));
+  const { data: produtos = [] } = useQuery({
+    queryKey: ["dre-produtos", produtoIds.length],
+    enabled: produtoIds.length > 0,
+    queryFn: async () => (await supabase.from("produtos").select("id, preco_custo").in("id", produtoIds)).data ?? [],
+  });
+  const custoMap = new Map(produtos.map((p) => [p.id, Number(p.preco_custo ?? 0)]));
 
   // Despesas no período
   const { data: despesas = [] } = useQuery({
@@ -59,7 +66,6 @@ function DREPage() {
         .gte("data", inicio).lte("data", fim)).data ?? []) as any[],
   });
 
-  // Contas a pagar pagas no período (despesas adicionais quitadas)
   const { data: cpPagas = [] } = useQuery({
     queryKey: ["dre-cp", inicio, fim],
     queryFn: async () =>
@@ -72,9 +78,9 @@ function DREPage() {
 
   const receitaBruta = vendas.reduce((s, v) => s + Number(v.total), 0);
   const descontos = vendas.reduce((s, v) => s + Number(v.desconto ?? 0), 0);
-  const receitaLiquida = receitaBruta; // total já é líquido do desconto
+  const receitaLiquida = receitaBruta;
   const cmv = itens.reduce(
-    (s, i) => s + Number(i.custo_unitario ?? 0) * Number(i.quantidade),
+    (s, i) => s + (custoMap.get(i.produto_id as string) ?? 0) * Number(i.quantidade),
     0,
   );
   const lucroBruto = receitaLiquida - cmv;

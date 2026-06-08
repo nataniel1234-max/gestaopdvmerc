@@ -11,20 +11,33 @@ export const Route = createFileRoute("/financeiro/balanco")({
 });
 
 function BalancoPage() {
-  // ATIVO
-  // Caixa: saldo de caixas abertos
+  // Caixa: saldo estimado dos caixas abertos
   const { data: caixasAbertos = [] } = useQuery({
     queryKey: ["bal-caixas"],
-    queryFn: async () => (await supabase.from("caixas").select("saldo_atual, valor_abertura").eq("status", "aberto")).data ?? [],
+    queryFn: async () =>
+      (await supabase
+        .from("caixas")
+        .select("valor_abertura, total_dinheiro, total_suprimentos, total_sangrias, total_despesas")
+        .eq("status", "aberto")).data ?? [],
   });
-  const caixaAtual = caixasAbertos.reduce((s, c) => s + Number(c.saldo_atual ?? c.valor_abertura ?? 0), 0);
+  const caixaAtual = caixasAbertos.reduce(
+    (s, c) =>
+      s +
+      Number(c.valor_abertura ?? 0) +
+      Number(c.total_dinheiro ?? 0) +
+      Number(c.total_suprimentos ?? 0) -
+      Number(c.total_sangrias ?? 0) -
+      Number(c.total_despesas ?? 0),
+    0,
+  );
 
-  // Estoque: estoque_atual * custo_medio
+  // Estoque ao custo (preco_custo) e ao preço de venda
   const { data: produtos = [] } = useQuery({
     queryKey: ["bal-produtos"],
-    queryFn: async () => (await supabase.from("produtos").select("estoque_atual, custo_medio, preco_venda").eq("ativo", true)).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("produtos").select("estoque_atual, preco_custo, preco_venda").eq("ativo", true)).data ?? [],
   });
-  const valorEstoque = produtos.reduce((s, p) => s + Number(p.estoque_atual ?? 0) * Number(p.custo_medio ?? 0), 0);
+  const valorEstoque = produtos.reduce((s, p) => s + Number(p.estoque_atual ?? 0) * Number(p.preco_custo ?? 0), 0);
   const valorEstoquePV = produtos.reduce((s, p) => s + Number(p.estoque_atual ?? 0) * Number(p.preco_venda ?? 0), 0);
 
   // Fiado a receber
