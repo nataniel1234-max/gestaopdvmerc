@@ -25,6 +25,7 @@ type ContaPagar = {
   descricao: string;
   fornecedor_id: string | null;
   categoria_id: string | null;
+  centro_custo_id: string | null;
   valor: number;
   data_vencimento: string;
   data_pagamento: string | null;
