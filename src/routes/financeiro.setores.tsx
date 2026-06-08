@@ -232,10 +232,10 @@ function SetoresPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Setores ativos" value={String(totals.setores)} icon={<Layers className="h-4 w-4" />} />
-        <KpiCard label="Receita total" value={brl(totals.receita)} icon={<TrendingUp className="h-4 w-4" />} status="healthy" />
+        <KpiCard label="Setores ativos" value={String(totals.setores)} icon={Layers} />
+        <KpiCard label="Receita total" value={brl(totals.receita)} icon={TrendingUp} status="healthy" />
         <KpiCard label="Lucro bruto" value={brl(totals.lucro)} hint={`Margem ${totals.margem.toFixed(1)}%`} status={totals.margem >= 25 ? "healthy" : totals.margem >= 15 ? "warning" : "critical"} />
-        <KpiCard label="Perdas no período" value={brl(totals.perdas)} icon={<TrendingDown className="h-4 w-4" />} status={totals.perdas > totals.receita * 0.03 ? "critical" : "healthy"} />
+        <KpiCard label="Perdas no período" value={brl(totals.perdas)} icon={TrendingDown} status={totals.perdas > totals.receita * 0.03 ? "critical" : "healthy"} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
