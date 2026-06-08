@@ -129,6 +129,8 @@ function DespesasPage() {
         onOpenChange={(v: boolean) => { setOpen(v); if (!v) setEdit(null); }}
         edit={edit}
         categorias={categorias}
+        centros={centros}
+        formas={formas}
         onSave={(f: Partial<Despesa>) => save.mutate(f)}
         saving={save.isPending}
       />
@@ -136,7 +138,7 @@ function DespesasPage() {
   );
 }
 
-function DespesaDialog({ open, onOpenChange, edit, categorias, onSave, saving }: any) {
+function DespesaDialog({ open, onOpenChange, edit, categorias, centros, formas, onSave, saving }: any) {
   const [form, setForm] = useState<Partial<Despesa>>({});
   const setF = (k: keyof Despesa, v: any) => setForm((p) => ({ ...p, [k]: v }));
   if (open && form.descricao === undefined && edit) setForm(edit);
@@ -151,14 +153,29 @@ function DespesaDialog({ open, onOpenChange, edit, categorias, onSave, saving }:
             <div><Label>Valor *</Label><Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setF("valor", e.target.value)} /></div>
             <div><Label>Data *</Label><Input type="date" value={form.data ?? new Date().toISOString().slice(0,10)} onChange={(e) => setF("data", e.target.value)} /></div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Categoria</Label>
+              <Select value={form.categoria_id ?? "none"} onValueChange={(v) => setF("categoria_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent><SelectItem value="none">—</SelectItem>{categorias.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Centro de custo</Label>
+              <Select value={form.centro_custo_id ?? "none"} onValueChange={(v) => setF("centro_custo_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent><SelectItem value="none">—</SelectItem>{centros.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
           <div>
-            <Label>Categoria</Label>
-            <Select value={form.categoria_id ?? "none"} onValueChange={(v) => setF("categoria_id", v === "none" ? null : v)}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent><SelectItem value="none">—</SelectItem>{categorias.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+            <Label>Forma de pagamento</Label>
+            <Select value={form.forma_pagamento ?? "none"} onValueChange={(v) => setF("forma_pagamento", v === "none" ? null : v)}>
+              <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <SelectContent><SelectItem value="none">—</SelectItem>{formas.map((f: any) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>Forma de pagamento</Label><Input value={form.forma_pagamento ?? ""} onChange={(e) => setF("forma_pagamento", e.target.value)} /></div>
           <div><Label>Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setF("observacoes", e.target.value)} rows={2} /></div>
         </div>
         <DialogFooter>
