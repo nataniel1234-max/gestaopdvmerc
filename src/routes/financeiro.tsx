@@ -11,6 +11,7 @@ const tabs = [
   { to: "/financeiro/dre", label: "DRE" },
   { to: "/financeiro/balanco", label: "Balanço" },
   { to: "/financeiro/curva-abc", label: "Curva ABC" },
+  { to: "/financeiro/setores", label: "Setores" },
   { to: "/financeiro/perdas", label: "Perdas" },
   { to: "/financeiro/contas-pagar", label: "Contas a Pagar" },
   { to: "/financeiro/contas-receber", label: "Contas a Receber" },

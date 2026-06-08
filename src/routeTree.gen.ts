@@ -28,6 +28,7 @@ import { Route as AssinaturaRouteImport } from './routes/assinatura'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FinanceiroIndexRouteImport } from './routes/financeiro.index'
+import { Route as FinanceiroSetoresRouteImport } from './routes/financeiro.setores'
 import { Route as FinanceiroPerdasRouteImport } from './routes/financeiro.perdas'
 import { Route as FinanceiroDreRouteImport } from './routes/financeiro.dre'
 import { Route as FinanceiroDividasRouteImport } from './routes/financeiro.dividas'
@@ -132,6 +133,11 @@ const FinanceiroIndexRoute = FinanceiroIndexRouteImport.update({
   path: '/',
   getParentRoute: () => FinanceiroRoute,
 } as any)
+const FinanceiroSetoresRoute = FinanceiroSetoresRouteImport.update({
+  id: '/setores',
+  path: '/setores',
+  getParentRoute: () => FinanceiroRoute,
+} as any)
 const FinanceiroPerdasRoute = FinanceiroPerdasRouteImport.update({
   id: '/perdas',
   path: '/perdas',
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/financeiro/dividas': typeof FinanceiroDividasRoute
   '/financeiro/dre': typeof FinanceiroDreRoute
   '/financeiro/perdas': typeof FinanceiroPerdasRoute
+  '/financeiro/setores': typeof FinanceiroSetoresRoute
   '/financeiro/': typeof FinanceiroIndexRoute
 }
 export interface FileRoutesByTo {
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/financeiro/dividas': typeof FinanceiroDividasRoute
   '/financeiro/dre': typeof FinanceiroDreRoute
   '/financeiro/perdas': typeof FinanceiroPerdasRoute
+  '/financeiro/setores': typeof FinanceiroSetoresRoute
   '/financeiro': typeof FinanceiroIndexRoute
 }
 export interface FileRoutesById {
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/financeiro/dividas': typeof FinanceiroDividasRoute
   '/financeiro/dre': typeof FinanceiroDreRoute
   '/financeiro/perdas': typeof FinanceiroPerdasRoute
+  '/financeiro/setores': typeof FinanceiroSetoresRoute
   '/financeiro/': typeof FinanceiroIndexRoute
 }
 export interface FileRouteTypes {
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/financeiro/dividas'
     | '/financeiro/dre'
     | '/financeiro/perdas'
+    | '/financeiro/setores'
     | '/financeiro/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/financeiro/dividas'
     | '/financeiro/dre'
     | '/financeiro/perdas'
+    | '/financeiro/setores'
     | '/financeiro'
   id:
     | '__root__'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/financeiro/dividas'
     | '/financeiro/dre'
     | '/financeiro/perdas'
+    | '/financeiro/setores'
     | '/financeiro/'
   fileRoutesById: FileRoutesById
 }
@@ -505,6 +517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinanceiroIndexRouteImport
       parentRoute: typeof FinanceiroRoute
     }
+    '/financeiro/setores': {
+      id: '/financeiro/setores'
+      path: '/setores'
+      fullPath: '/financeiro/setores'
+      preLoaderRoute: typeof FinanceiroSetoresRouteImport
+      parentRoute: typeof FinanceiroRoute
+    }
     '/financeiro/perdas': {
       id: '/financeiro/perdas'
       path: '/perdas'
@@ -573,6 +592,7 @@ interface FinanceiroRouteChildren {
   FinanceiroDividasRoute: typeof FinanceiroDividasRoute
   FinanceiroDreRoute: typeof FinanceiroDreRoute
   FinanceiroPerdasRoute: typeof FinanceiroPerdasRoute
+  FinanceiroSetoresRoute: typeof FinanceiroSetoresRoute
   FinanceiroIndexRoute: typeof FinanceiroIndexRoute
 }
 
@@ -585,6 +605,7 @@ const FinanceiroRouteChildren: FinanceiroRouteChildren = {
   FinanceiroDividasRoute: FinanceiroDividasRoute,
   FinanceiroDreRoute: FinanceiroDreRoute,
   FinanceiroPerdasRoute: FinanceiroPerdasRoute,
+  FinanceiroSetoresRoute: FinanceiroSetoresRoute,
   FinanceiroIndexRoute: FinanceiroIndexRoute,
 }
 
