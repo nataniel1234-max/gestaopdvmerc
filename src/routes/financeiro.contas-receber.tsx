@@ -52,11 +52,8 @@ function ContasReceberPage() {
     queryKey: ["clientes-min"],
     queryFn: async () => (await supabase.from("clientes").select("id, nome").order("nome")).data ?? [],
   });
-  const { data: categorias = [] } = useQuery({
-    queryKey: ["cat-fin-receita"],
-    queryFn: async () =>
-      (await supabase.from("categorias_financeiras").select("id, nome, cor").eq("tipo", "receita").order("nome")).data ?? [],
-  });
+  const { data: categorias = [] } = useCategoriasFinanceiras("receita");
+  const { data: formas = [] } = useFormasPagamento();
 
   const hoje = new Date().toISOString().slice(0, 10);
   const exibidas = lista.filter((c) => {
