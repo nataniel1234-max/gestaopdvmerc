@@ -96,17 +96,18 @@ function DespesasPage() {
         <CardContent className="p-0">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>Categoria</TableHead>
+              <TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>Categoria</TableHead><TableHead>Centro de custo</TableHead>
               <TableHead>Forma</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Ações</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {lista.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhuma despesa</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhuma despesa</TableCell></TableRow>
               ) : lista.map((d) => (
                 <TableRow key={d.id}>
                   <TableCell>{dtShort(d.data)}</TableCell>
                   <TableCell className="font-medium">{d.descricao}</TableCell>
                   <TableCell>{d.categorias_financeiras?.nome ?? "—"}</TableCell>
+                  <TableCell>{d.centros_custo?.nome ?? "—"}</TableCell>
                   <TableCell>{d.forma_pagamento ?? "—"}</TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{brl(d.valor)}</TableCell>
                   <TableCell className="text-right">
