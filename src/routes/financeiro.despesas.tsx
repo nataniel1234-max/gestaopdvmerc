@@ -40,14 +40,12 @@ function DespesasPage() {
     queryFn: async () =>
       ((await supabase
         .from("despesas")
-        .select("*, categorias_financeiras(nome, cor)")
+        .select("*, categorias_financeiras(nome, cor), centros_custo(nome)")
         .order("data", { ascending: false })).data ?? []) as any[],
   });
-  const { data: categorias = [] } = useQuery({
-    queryKey: ["cat-fin-despesa"],
-    queryFn: async () =>
-      (await supabase.from("categorias_financeiras").select("id, nome, cor").eq("tipo", "despesa").order("nome")).data ?? [],
-  });
+  const { data: categorias = [] } = useCategoriasFinanceiras("despesa");
+  const { data: centros = [] } = useCentrosCusto();
+  const { data: formas = [] } = useFormasPagamento();
 
   const total = lista.reduce((s, d) => s + Number(d.valor), 0);
 
