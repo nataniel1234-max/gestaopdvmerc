@@ -56,6 +56,153 @@ export type Database = {
         }
         Relationships: []
       }
+      ativos_imobilizado: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          comercio_id: string
+          created_at: string
+          data_aquisicao: string | null
+          depreciacao_acumulada: number
+          descricao: string
+          id: string
+          observacoes: string | null
+          updated_at: string
+          valor_aquisicao: number
+          valor_atual: number
+          vida_util_anos: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          comercio_id?: string
+          created_at?: string
+          data_aquisicao?: string | null
+          depreciacao_acumulada?: number
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_aquisicao?: number
+          valor_atual?: number
+          vida_util_anos?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          comercio_id?: string
+          created_at?: string
+          data_aquisicao?: string | null
+          depreciacao_acumulada?: number
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_aquisicao?: number
+          valor_atual?: number
+          vida_util_anos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ativos_imobilizado_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ativos_intangivel: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          comercio_id: string
+          created_at: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          updated_at: string
+          valor_atualizado: number
+          valor_registrado: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          comercio_id?: string
+          created_at?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_atualizado?: number
+          valor_registrado?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          comercio_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_atualizado?: number
+          valor_registrado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ativos_intangivel_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ativos_investimentos: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          comercio_id: string
+          created_at: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          comercio_id?: string
+          created_at?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          comercio_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ativos_investimentos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria: {
         Row: {
           acao: string
@@ -486,6 +633,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      contas_bancarias: {
+        Row: {
+          ativo: boolean
+          comercio_id: string
+          created_at: string
+          id: string
+          instituicao: string | null
+          nome: string
+          observacoes: string | null
+          saldo: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          instituicao?: string | null
+          nome: string
+          observacoes?: string | null
+          saldo?: number
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          id?: string
+          instituicao?: string | null
+          nome?: string
+          observacoes?: string | null
+          saldo?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_bancarias_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contas_pagar: {
         Row: {
@@ -1182,6 +1376,103 @@ export type Database = {
           },
           {
             foreignKeyName: "pagamentos_fiado_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passivos_longo_prazo: {
+        Row: {
+          ativo: boolean
+          comercio_id: string
+          created_at: string
+          credor: string
+          data_contratacao: string | null
+          data_vencimento_final: string | null
+          id: string
+          observacoes: string | null
+          saldo_devedor: number
+          taxa_juros: number | null
+          tipo: string
+          updated_at: string
+          valor_original: number
+        }
+        Insert: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          credor: string
+          data_contratacao?: string | null
+          data_vencimento_final?: string | null
+          id?: string
+          observacoes?: string | null
+          saldo_devedor?: number
+          taxa_juros?: number | null
+          tipo: string
+          updated_at?: string
+          valor_original?: number
+        }
+        Update: {
+          ativo?: boolean
+          comercio_id?: string
+          created_at?: string
+          credor?: string
+          data_contratacao?: string | null
+          data_vencimento_final?: string | null
+          id?: string
+          observacoes?: string | null
+          saldo_devedor?: number
+          taxa_juros?: number | null
+          tipo?: string
+          updated_at?: string
+          valor_original?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passivos_longo_prazo_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonio_liquido: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          comercio_id?: string
+          created_at?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          tipo: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonio_liquido_comercio_id_fkey"
             columns: ["comercio_id"]
             isOneToOne: false
             referencedRelation: "comercios"
