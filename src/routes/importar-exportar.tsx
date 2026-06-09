@@ -186,11 +186,28 @@ function EntityPanel({ entity }: { entity: EntityDef }) {
     const text = await file.text();
     const parsed = parseCSV(text);
     if (parsed.headers.length === 0) { toast.error("CSV vazio ou inválido"); return; }
-    setCsv({ headers: parsed.headers, rows: parsed.rows });
+    // Sanitiza cabeçalhos: remove vazios e duplicados (Radix Select não aceita value="")
+    const seen = new Set<string>();
+    const cleanHeaders: string[] = [];
+    parsed.headers.forEach((h, idx) => {
+      let name = (h ?? "").trim();
+      if (!name) name = `coluna_${idx + 1}`;
+      let unique = name;
+      let n = 2;
+      while (seen.has(unique)) unique = `${name} (${n++})`;
+      seen.add(unique);
+      cleanHeaders.push(unique);
+    });
+    const cleanRows = parsed.rows.map((r) => {
+      const o: CsvRow = {};
+      parsed.headers.forEach((orig, i) => { o[cleanHeaders[i]] = r[orig] ?? ""; });
+      return o;
+    });
+    setCsv({ headers: cleanHeaders, rows: cleanRows });
     // auto-map
     const m: Record<string, string> = {};
     entity.fields.forEach((f) => {
-      const found = autoMap(parsed.headers, [f.label, f.key, ...f.aliases]);
+      const found = autoMap(cleanHeaders, [f.label, f.key, ...f.aliases]);
       if (found) m[f.key] = found;
     });
     setMapping(m);
