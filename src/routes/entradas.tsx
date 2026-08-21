@@ -9,10 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Save, ArrowDownToLine } from "lucide-react";
+import { Plus, Trash2, Save, ArrowDownToLine, Wallet, CalendarClock } from "lucide-react";
 import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
+import { useFormasPagamento, useCategoriasFinanceiras } from "@/lib/predefinicoes";
+import { getCaixaAberto } from "@/lib/caixa";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/entradas")({
   head: () => ({ meta: [{ title: "Entrada de Mercadoria — Mercadinho" }] }),
@@ -20,6 +23,12 @@ export const Route = createFileRoute("/entradas")({
 });
 
 type Item = { produto_id: string; produto_nome: string; quantidade: number; preco_custo: number; vendido_por_peso?: boolean; unidade?: string };
+
+const addDias = (base: string, dias: number) => {
+  const d = new Date(`${base}T12:00:00`);
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+};
 
 function EntradasPage() {
   const qc = useQueryClient();
@@ -29,6 +38,15 @@ function EntradasPage() {
   const [observacoes, setObs] = useState("");
   const [busca, setBusca] = useState("");
   const [itens, setItens] = useState<Item[]>([]);
+  const [condicao, setCondicao] = useState<"avista" | "prazo">("avista");
+  const [formaPagamento, setFormaPagamento] = useState("Dinheiro");
+  const [categoria_id, setCategoria] = useState("");
+  const [parcelas, setParcelas] = useState("1");
+  const [primeiroVenc, setPrimeiroVenc] = useState(addDias(new Date().toISOString().slice(0, 10), 30));
+
+  const { data: formas = [] } = useFormasPagamento();
+  const { data: categoriasDespesa = [] } = useCategoriasFinanceiras("despesa");
+
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-busca"],
