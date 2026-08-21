@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store, Scale } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Barcode, X, Printer, User, Banknote, CreditCard, Smartphone, BookOpen, LogOut, Store, Scale, Share2, Download } from "lucide-react";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
@@ -17,6 +17,7 @@ import { exigirCaixaAberto } from "@/lib/caixa";
 import { CupomVenda, type VendaCompleta } from "@/components/CupomVenda";
 import { CaixaControles } from "@/components/CaixaControles";
 import { imprimirDocumento } from "@/lib/print-config";
+import { compartilharCupom, gerarCupomJPG, baixarBlob } from "@/lib/cupom-imagem";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -55,6 +56,8 @@ function PDVPage() {
   const [valorRecebido, setValorRecebido] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [cupomFinal, setCupomFinal] = useState<VendaCompleta | null>(null);
+  const cupomRef = useRef<HTMLDivElement>(null);
+  const [gerandoImg, setGerandoImg] = useState(false);
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-pdv"],
@@ -255,6 +258,33 @@ function PDVPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const nomeArquivoCupom = () => `cupom-${cupomFinal?.numero_cupom ?? "venda"}.jpg`;
+
+  const baixarJPG = async () => {
+    if (!cupomRef.current) return;
+    setGerandoImg(true);
+    try {
+      const { blob } = await gerarCupomJPG(cupomRef.current, nomeArquivoCupom());
+      baixarBlob(blob, nomeArquivoCupom());
+      toast.success("Cupom salvo em JPG");
+    } catch { toast.error("Não foi possível gerar a imagem"); }
+    finally { setGerandoImg(false); }
+  };
+
+  const compartilharWhats = async () => {
+    if (!cupomRef.current || !cupomFinal) return;
+    setGerandoImg(true);
+    try {
+      const modo = await compartilharCupom({
+        el: cupomRef.current,
+        nomeArquivo: nomeArquivoCupom(),
+        texto: `Cupom #${cupomFinal.numero_cupom} — Total ${brl(cupomFinal.total)}`,
+      });
+      if (modo === "download") toast.info("Imagem baixada — anexe no WhatsApp que foi aberto.");
+    } catch { toast.error("Não foi possível compartilhar o cupom"); }
+    finally { setGerandoImg(false); }
+  };
+
   const formaIcon: Record<Forma, React.ReactNode> = {
     dinheiro: <Banknote className="h-4 w-4" />, debito: <CreditCard className="h-4 w-4" />,
     credito: <CreditCard className="h-4 w-4" />, pix: <Smartphone className="h-4 w-4" />, fiado: <BookOpen className="h-4 w-4" />,
@@ -263,22 +293,23 @@ function PDVPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Barra superior do PDV (sempre visível) */}
-      <header className="h-14 flex items-center gap-3 border-b bg-card px-4 sticky top-0 z-30 print:hidden">
-        <div className="flex items-center gap-2 font-bold">
+      <header className="flex flex-wrap items-center gap-2 md:gap-3 border-b bg-card px-3 md:px-4 py-2 md:h-14 md:py-0 sticky top-0 z-30 print:hidden">
+        <div className="flex items-center gap-2 font-bold text-sm md:text-base">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Store className="h-4 w-4" />
           </div>
-          <span>PDV — Frente de Caixa</span>
+          <span className="hidden xs:inline sm:inline">PDV — Frente de Caixa</span>
+          <span className="sm:hidden">PDV</span>
         </div>
-        <div className="flex-1 overflow-x-auto">
-          <div className="flex justify-end">
+        <div className="order-3 w-full md:order-none md:w-auto md:flex-1 overflow-x-auto">
+          <div className="flex md:justify-end">
             <CaixaControles />
           </div>
         </div>
         <Button
           size="sm"
           variant="ghost"
-          className="ml-2"
+          className="ml-auto md:ml-2"
           onClick={() => {
             // Se foi aberto em nova janela, fecha. Senão volta ao dashboard.
             window.close();
@@ -303,7 +334,7 @@ function PDVPage() {
           </Card>
         </div>
       ) : (
-        <div className="grid lg:grid-cols-[1fr_400px] gap-4 px-4 md:px-6 py-4 md:py-6 flex-1">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-4 px-3 md:px-6 py-3 md:py-6 flex-1 pb-28 lg:pb-6">
           {/* Lado esquerdo: busca + carrinho */}
       <div className="flex flex-col gap-4 min-w-0">
         <Card>
@@ -315,7 +346,7 @@ function PDVPage() {
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 onKeyDown={handleBuscaKey}
-                placeholder="Bipe o código de barras ou digite o nome do produto... (Enter adiciona, F2 finaliza)"
+                placeholder="Bipe o código ou busque o produto…"
                 className="pl-10 h-12 text-base"
                 autoFocus
               />
@@ -353,8 +384,8 @@ function PDVPage() {
             ) : (
               <div className="space-y-2">
                 {carrinho.map((it) => (
-                  <div key={it.produto_id} className="flex items-center gap-3 p-3 border rounded-md hover:bg-accent/30">
-                    <div className="flex-1 min-w-0">
+                  <div key={it.produto_id} className="flex flex-wrap items-center gap-2 md:gap-3 p-3 border rounded-md hover:bg-accent/30">
+                    <div className="flex-1 min-w-[55%]">
                       <div className="font-medium truncate flex items-center gap-2">
                         {it.produto_nome}
                         {it.vendido_por_peso && <Scale className="h-3 w-3 text-primary shrink-0" />}
@@ -386,7 +417,7 @@ function PDVPage() {
                         <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQtd(it.produto_id, it.quantidade + 1)}><Plus className="h-3 w-3" /></Button>
                       </div>
                     )}
-                    <div className="w-24 text-right font-bold">{brl(it.quantidade * it.preco_unitario)}</div>
+                    <div className="w-20 md:w-24 text-right font-bold tabular-nums">{brl(it.quantidade * it.preco_unitario)}</div>
                     <Button size="icon" variant="ghost" onClick={() => remover(it.produto_id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
@@ -397,7 +428,7 @@ function PDVPage() {
       </div>
 
       {/* Lado direito: resumo + finalizar */}
-      <Card className="h-fit lg:sticky lg:top-20" style={{ background: "var(--gradient-primary)" }}>
+      <Card className="h-fit order-first lg:order-none lg:sticky lg:top-20" style={{ background: "var(--gradient-primary)" }}>
         <CardContent className="p-5 text-primary-foreground space-y-4">
           <div>
             <Label className="text-primary-foreground/80 text-xs uppercase tracking-wider">Cliente (opcional)</Label>
@@ -577,12 +608,22 @@ function PDVPage() {
 
       {/* Cupom impresso */}
       <Dialog open={!!cupomFinal} onOpenChange={(v) => { if (!v) setCupomFinal(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Venda concluída — Cupom #{cupomFinal?.numero_cupom}</DialogTitle></DialogHeader>
-          {cupomFinal && <CupomVenda venda={cupomFinal} />}
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCupomFinal(null)}>Fechar</Button>
-            <Button onClick={() => imprimirDocumento("cupom")}><Printer className="h-4 w-4 mr-1" /> Imprimir cupom</Button>
+          <div ref={cupomRef} className="bg-white">
+            {cupomFinal && <CupomVenda venda={cupomFinal} />}
+          </div>
+          <DialogFooter className="gap-2 flex-col sm:flex-row">
+            <Button className="w-full sm:w-auto" disabled={gerandoImg} onClick={compartilharWhats}>
+              <Share2 className="h-4 w-4 mr-1" /> {gerandoImg ? "Gerando…" : "Enviar no WhatsApp"}
+            </Button>
+            <Button variant="outline" className="w-full sm:w-auto" disabled={gerandoImg} onClick={baixarJPG}>
+              <Download className="h-4 w-4 mr-1" /> Salvar JPG
+            </Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => imprimirDocumento("cupom")}>
+              <Printer className="h-4 w-4 mr-1" /> Imprimir
+            </Button>
+            <Button variant="ghost" className="w-full sm:w-auto" onClick={() => setCupomFinal(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
