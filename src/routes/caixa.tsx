@@ -440,3 +440,39 @@ function DialogPagarConta({
     </Dialog>
   );
 }
+
+/** Posição financeira consolidada: caixa/bancos, compromissos e crédito tomado. */
+function PosicaoFinanceira() {
+  const { data: bancos = [] } = useQuery({
+    queryKey: ["bal-bancos"],
+    queryFn: async () => (await supabase.from("contas_bancarias").select("id, nome, saldo").eq("ativo", true)).data ?? [],
+  });
+  const { data: dividas = [] } = useQuery({
+    queryKey: ["dividas"],
+    queryFn: async () => (await supabase.from("dividas").select("credor, saldo_devedor, valor_parcela, status").in("status", ["ativa", "renegociada"])).data ?? [],
+  });
+  const { data: aPagar = [] } = useQuery({
+    queryKey: ["contas-pagar-abertas"],
+    queryFn: async () => (await supabase.from("contas_pagar").select("valor, data_vencimento, status").in("status", ["pendente", "atrasada"])).data ?? [],
+  });
+
+  const saldoBancos = bancos.reduce((s, b) => s + Number(b.saldo ?? 0), 0);
+  const totalDividas = dividas.reduce((s, d) => s + Number(d.saldo_devedor ?? 0), 0);
+  const parcelasMes = dividas.reduce((s, d) => s + Number(d.valor_parcela ?? 0), 0);
+  const fimMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10);
+  const aPagarMes = aPagar.filter((c) => c.data_vencimento <= fimMes).reduce((s, c) => s + Number(c.valor), 0);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2"><Landmark className="h-4 w-4 text-primary" /> Posição financeira</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Saldo em bancos" value={brl(saldoBancos)} icon={Wallet} status="neutral" hint={`${bancos.length} conta(s)`} />
+        <KpiCard label="A pagar até o fim do mês" value={brl(aPagarMes)} icon={FileText} status={aPagarMes > 0 ? "warning" : "healthy"} hint="Contas a pagar pendentes e atrasadas" />
+        <KpiCard label="Crédito tomado (saldo)" value={brl(totalDividas)} icon={Landmark} status={totalDividas > 0 ? "warning" : "healthy"} hint={`${dividas.length} contrato(s) ativo(s)`} />
+        <KpiCard label="Parcelas mensais" value={brl(parcelasMes)} icon={Receipt} status="neutral" hint="Compromisso fixo mensal com credores" />
+      </CardContent>
+    </Card>
+  );
+}
