@@ -227,6 +227,8 @@ function CaixaPage() {
         </CardContent>
       </Card>
 
+      <PosicaoFinanceira />
+
       {caixa && (
         <>
           <DialogMovimento
@@ -244,6 +246,14 @@ function CaixaPage() {
           />
         </>
       )}
+
+      <DialogCredito
+        open={dialog === "credito"}
+        onOpenChange={(v) => !v && setDialog(null)}
+        caixaId={caixa?.id ?? null}
+        onDone={() => { setDialog(null); invalidar(); }}
+      />
+
     </div>
   );
 }
