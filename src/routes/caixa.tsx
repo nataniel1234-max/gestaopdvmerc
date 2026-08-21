@@ -149,9 +149,10 @@ function CaixaPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard label="Saldo em dinheiro" value={brl(resumo.saldoDinheiro)} icon={Banknote} status="healthy" highlight
               hint={`Abertura ${brl(caixa.valor_abertura)}`} />
-            <KpiCard label="Entradas" value={brl(resumo.entradas)} icon={ArrowDownCircle} status="neutral" hint="Vendas, fiado e suprimentos" />
+            <KpiCard label="Entradas" value={brl(resumo.entradas)} icon={ArrowDownCircle} status="neutral" hint="Vendas à vista, recebimentos de fiado e suprimentos" />
             <KpiCard label="Saídas" value={brl(resumo.saidas)} icon={ArrowUpCircle} status="warning" hint="Sangrias, despesas e pagamentos" />
-            <KpiCard label="Vendas do caixa" value={brl(resumo.totalVendas)} icon={ShoppingBag} status="neutral" hint={`${vendas.length} cupons`} />
+            <KpiCard label="Vendas do caixa" value={brl(resumo.totalVendas)} icon={ShoppingBag} status="neutral"
+              hint={`${vendas.length} cupons · a prazo ${brl(resumo.aPrazo)} (fora do caixa)`} />
           </div>
 
           <div className="flex flex-wrap gap-2">
