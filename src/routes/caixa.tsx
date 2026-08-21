@@ -116,7 +116,7 @@ function CaixaPage() {
       if (emDinheiro) dinheiro += l.entrada ? l.valor : -l.valor;
     }
     const saldoDinheiro = Number(caixa?.valor_abertura ?? 0) + dinheiro;
-    return { entradas, saidas, saldoDinheiro, totalVendas };
+    return { entradas, saidas, saldoDinheiro, totalVendas, aPrazo };
   }, [linhas, caixa]);
 
   const invalidar = () => {
