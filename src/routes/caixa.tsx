@@ -42,7 +42,7 @@ type Linha = { id: string; quando: string; tipo: string; descricao: string; valo
 
 function CaixaPage() {
   const qc = useQueryClient();
-  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta">(null);
+  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta" | "credito">(null);
 
   const { data: caixa } = useQuery({
     queryKey: ["caixa-aberto"],
