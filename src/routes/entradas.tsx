@@ -99,15 +99,70 @@ function EntradasPage() {
           quantidade: it.quantidade, custo_unitario: it.preco_custo, referencia_id: nota.id,
         });
       }
+
+      const descBase = `Compra${numero_nota ? ` NF ${numero_nota}` : ""}${fornecedor_id ? "" : " (sem fornecedor)"}`;
+
+      if (condicao === "avista") {
+        // Compra à vista: quita imediatamente e cruza com o caixa quando for dinheiro
+        const { error: eCP } = await supabase.from("contas_pagar").insert({
+          descricao: descBase,
+          fornecedor_id: fornecedor_id || null,
+          categoria_id: categoria_id || null,
+          valor: total,
+          data_vencimento: data_entrada,
+          data_pagamento: data_entrada,
+          status: "paga",
+          forma_pagamento: formaPagamento,
+          observacoes: observacoes || null,
+        });
+        if (eCP) throw eCP;
+
+        if (formaPagamento.toLowerCase().includes("dinheiro")) {
+          const caixa = await getCaixaAberto();
+          if (!caixa) throw new Error("Compra à vista em dinheiro exige caixa aberto. Abra o caixa no PDV ou escolha outra forma.");
+          const { error: eMov } = await supabase.from("movimentacoes_caixa").insert({
+            caixa_id: caixa.id,
+            tipo: "despesa",
+            forma_pagamento: "dinheiro",
+            valor: total,
+            descricao: descBase,
+            referencia_id: nota.id,
+          });
+          if (eMov) throw eMov;
+        }
+      } else {
+        // Compra a prazo: gera as parcelas em Contas a Pagar
+        const n = Math.max(1, Number(parcelas) || 1);
+        const valorParcela = Math.round((total / n) * 100) / 100;
+        const linhas = Array.from({ length: n }, (_, i) => ({
+          descricao: `${descBase}${n > 1 ? ` — ${i + 1}/${n}` : ""}`,
+          fornecedor_id: fornecedor_id || null,
+          categoria_id: categoria_id || null,
+          valor: i === n - 1 ? Math.round((total - valorParcela * (n - 1)) * 100) / 100 : valorParcela,
+          data_vencimento: addDias(primeiroVenc, i * 30),
+          status: "pendente" as const,
+          forma_pagamento: formaPagamento,
+          parcela_atual: i + 1,
+          parcelas_total: n,
+          observacoes: observacoes || null,
+        }));
+        const { error: eCP } = await supabase.from("contas_pagar").insert(linhas);
+        if (eCP) throw eCP;
+      }
     },
     onSuccess: () => {
-      toast.success("Entrada lançada com sucesso");
+      toast.success(condicao === "avista" ? "Entrada lançada e baixada no financeiro" : "Entrada lançada e parcelas geradas em Contas a Pagar");
       setItens([]); setNumero(""); setObs("");
       qc.invalidateQueries({ queryKey: ["notas-entrada"] });
       qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["estoque-produtos"] });
+      qc.invalidateQueries({ queryKey: ["contas-pagar"] });
+      qc.invalidateQueries({ queryKey: ["bal-cp"] });
+      qc.invalidateQueries({ queryKey: ["caixa-movimentacoes"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <div>
