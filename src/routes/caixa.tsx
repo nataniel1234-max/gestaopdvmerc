@@ -16,9 +16,10 @@ import { CaixaControles } from "@/components/CaixaControles";
 import { brl, dt, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import {
-  ArrowDownCircle, ArrowUpCircle, Banknote, Receipt, FileText, Wallet, ShoppingBag,
+  ArrowDownCircle, ArrowUpCircle, Banknote, Receipt, FileText, Wallet, ShoppingBag, Landmark,
 } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
+import { DialogCredito } from "@/components/DialogCredito";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
