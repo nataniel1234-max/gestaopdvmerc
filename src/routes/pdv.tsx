@@ -28,7 +28,7 @@ export const Route = createFileRoute("/pdv")({
 
 type ProdutoPDV = {
   id: string; nome: string; codigo_barras: string | null;
-  preco_venda: number; estoque_atual: number; unidade: string;
+  preco_venda: number; preco_custo?: number | null; estoque_atual: number; unidade: string;
   vendido_por_peso?: boolean;
 };
 
@@ -38,6 +38,7 @@ type Carrinho = {
   preco_unitario: number;
   quantidade: number;
   estoque_disponivel: number;
+  preco_custo: number;
   unidade: string;
   vendido_por_peso?: boolean;
 };
@@ -57,7 +58,7 @@ function PDVPage() {
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-pdv"],
-    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, estoque_atual, unidade, vendido_por_peso").eq("ativo", true).order("nome")).data ?? [],
+    queryFn: async () => (await supabase.from("produtos").select("id, nome, codigo_barras, preco_venda, preco_custo, estoque_atual, unidade, vendido_por_peso").eq("ativo", true).order("nome")).data ?? [],
     staleTime: 2 * 60_000,
   });
   const { data: clientes = [] } = useQuery({
@@ -136,7 +137,7 @@ function PDVPage() {
       return [...prev, {
         produto_id: p.id, produto_nome: p.nome,
         preco_unitario: Number(p.preco_venda), quantidade,
-        estoque_disponivel: Number(p.estoque_atual), unidade: p.unidade,
+        estoque_disponivel: Number(p.estoque_atual), preco_custo: Number(p.preco_custo ?? 0), unidade: p.unidade,
         vendido_por_peso: p.vendido_por_peso,
       }];
     });
@@ -219,6 +220,7 @@ function PDVPage() {
         await aplicarMovimentacao({
           produto_id: it.produto_id, tipo: "saida_venda", motivo: "venda",
           quantidade: it.quantidade, referencia_id: venda.id,
+          custo_unitario: it.preco_custo || null,
         });
       }
 
@@ -228,10 +230,13 @@ function PDVPage() {
           .eq("id", clienteSel.id);
       }
 
-      await supabase.from("movimentacoes_caixa").insert({
-        caixa_id, tipo: "venda", forma_pagamento: forma, valor: total,
-        descricao: `Venda #${venda.numero_cupom}`, referencia_id: venda.id,
-      });
+      // Venda fiado não entra no caixa: só vira caixa no recebimento do fiado
+      if (forma !== "fiado") {
+        await supabase.from("movimentacoes_caixa").insert({
+          caixa_id, tipo: "venda", forma_pagamento: forma, valor: total,
+          descricao: `Venda #${venda.numero_cupom}`, referencia_id: venda.id,
+        });
+      }
 
       const { data: completa } = await supabase.from("vendas")
         .select("*, clientes(nome), itens_venda(*)").eq("id", venda.id).single();

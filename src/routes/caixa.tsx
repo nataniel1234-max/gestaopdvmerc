@@ -79,10 +79,12 @@ function CaixaPage() {
   const linhas: Linha[] = useMemo(() => {
     const l: Linha[] = [];
     for (const v of vendas) {
+      const aPrazo = v.forma_pagamento === "fiado";
       l.push({
-        id: `v-${v.id}`, quando: v.created_at, tipo: "Venda",
+        id: `v-${v.id}`, quando: v.created_at,
+        tipo: aPrazo ? "Venda a prazo" : "Venda",
         descricao: `Cupom #${v.numero_cupom}`, valor: Number(v.total),
-        entrada: v.forma_pagamento !== "fiado", forma: v.forma_pagamento,
+        entrada: !aPrazo, forma: v.forma_pagamento,
       });
     }
     for (const p of fiado) {
@@ -92,10 +94,12 @@ function CaixaPage() {
       });
     }
     for (const m of movs) {
-      const entrada = m.tipo === "suprimento" || m.tipo === "abertura";
+      // vendas, recebimentos de fiado e abertura já são contabilizados pelas suas origens
+      if (m.tipo === "venda" || m.tipo === "recebimento_fiado" || m.tipo === "abertura" || m.tipo === "fechamento") continue;
+      const entrada = m.tipo === "suprimento";
       l.push({
         id: `m-${m.id}`, quando: m.created_at,
-        tipo: m.tipo === "sangria" ? "Sangria" : m.tipo === "suprimento" ? "Suprimento" : m.tipo === "despesa" ? "Saída / Despesa" : m.tipo,
+        tipo: m.tipo === "sangria" ? "Sangria" : m.tipo === "suprimento" ? "Suprimento" : "Saída / Despesa",
         descricao: m.descricao ?? "—", valor: Number(m.valor), entrada, forma: m.forma_pagamento,
       });
     }
@@ -103,15 +107,16 @@ function CaixaPage() {
   }, [vendas, movs, fiado]);
 
   const resumo = useMemo(() => {
-    let entradas = 0, saidas = 0, dinheiro = 0, totalVendas = 0;
+    let entradas = 0, saidas = 0, dinheiro = 0, totalVendas = 0, aPrazo = 0;
     for (const l of linhas) {
-      if (l.tipo === "Venda") totalVendas += l.valor;
-      if (l.entrada) entradas += l.valor; else if (l.tipo !== "Venda") saidas += l.valor;
-      if (l.forma === "dinheiro") dinheiro += l.entrada ? l.valor : -l.valor;
-      else if (!l.entrada && l.tipo !== "Venda" && (l.forma === "dinheiro" || !l.forma)) dinheiro -= l.valor;
+      if (l.tipo === "Venda" || l.tipo === "Venda a prazo") totalVendas += l.valor;
+      if (l.tipo === "Venda a prazo") { aPrazo += l.valor; continue; } // não movimenta caixa
+      if (l.entrada) entradas += l.valor; else saidas += l.valor;
+      const emDinheiro = l.forma === "dinheiro" || (!l.entrada && !l.forma);
+      if (emDinheiro) dinheiro += l.entrada ? l.valor : -l.valor;
     }
     const saldoDinheiro = Number(caixa?.valor_abertura ?? 0) + dinheiro;
-    return { entradas, saidas, saldoDinheiro, totalVendas };
+    return { entradas, saidas, saldoDinheiro, totalVendas, aPrazo };
   }, [linhas, caixa]);
 
   const invalidar = () => {
@@ -144,9 +149,10 @@ function CaixaPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard label="Saldo em dinheiro" value={brl(resumo.saldoDinheiro)} icon={Banknote} status="healthy" highlight
               hint={`Abertura ${brl(caixa.valor_abertura)}`} />
-            <KpiCard label="Entradas" value={brl(resumo.entradas)} icon={ArrowDownCircle} status="neutral" hint="Vendas, fiado e suprimentos" />
+            <KpiCard label="Entradas" value={brl(resumo.entradas)} icon={ArrowDownCircle} status="neutral" hint="Vendas à vista, recebimentos de fiado e suprimentos" />
             <KpiCard label="Saídas" value={brl(resumo.saidas)} icon={ArrowUpCircle} status="warning" hint="Sangrias, despesas e pagamentos" />
-            <KpiCard label="Vendas do caixa" value={brl(resumo.totalVendas)} icon={ShoppingBag} status="neutral" hint={`${vendas.length} cupons`} />
+            <KpiCard label="Vendas do caixa" value={brl(resumo.totalVendas)} icon={ShoppingBag} status="neutral"
+              hint={`${vendas.length} cupons · a prazo ${brl(resumo.aPrazo)} (fora do caixa)`} />
           </div>
 
           <div className="flex flex-wrap gap-2">
