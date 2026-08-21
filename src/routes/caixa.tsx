@@ -124,6 +124,9 @@ function CaixaPage() {
     qc.invalidateQueries({ queryKey: ["caixa-movs", caixa?.id] });
     qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
     qc.invalidateQueries({ queryKey: ["contas_pagar"] });
+    qc.invalidateQueries({ queryKey: ["contas-pagar-abertas"] });
+    qc.invalidateQueries({ queryKey: ["dividas"] });
+    qc.invalidateQueries({ queryKey: ["bal-bancos"] });
     qc.invalidateQueries({ queryKey: ["despesas"] });
   };
 
