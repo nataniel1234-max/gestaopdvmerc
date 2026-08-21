@@ -16,9 +16,10 @@ import { CaixaControles } from "@/components/CaixaControles";
 import { brl, dt, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import {
-  ArrowDownCircle, ArrowUpCircle, Banknote, Receipt, FileText, Wallet, ShoppingBag,
+  ArrowDownCircle, ArrowUpCircle, Banknote, Receipt, FileText, Wallet, ShoppingBag, Landmark,
 } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
+import { DialogCredito } from "@/components/DialogCredito";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -41,7 +42,7 @@ type Linha = { id: string; quando: string; tipo: string; descricao: string; valo
 
 function CaixaPage() {
   const qc = useQueryClient();
-  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta">(null);
+  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta" | "credito">(null);
 
   const { data: caixa } = useQuery({
     queryKey: ["caixa-aberto"],
@@ -123,6 +124,9 @@ function CaixaPage() {
     qc.invalidateQueries({ queryKey: ["caixa-movs", caixa?.id] });
     qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
     qc.invalidateQueries({ queryKey: ["contas_pagar"] });
+    qc.invalidateQueries({ queryKey: ["contas-pagar-abertas"] });
+    qc.invalidateQueries({ queryKey: ["dividas"] });
+    qc.invalidateQueries({ queryKey: ["bal-bancos"] });
     qc.invalidateQueries({ queryKey: ["despesas"] });
   };
 
@@ -140,8 +144,11 @@ function CaixaPage() {
 
       {!caixa ? (
         <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            Nenhum caixa aberto. Abra o caixa para registrar movimentações.
+          <CardContent className="py-10 text-center text-muted-foreground space-y-3">
+            <p>Nenhum caixa aberto. Abra o caixa para registrar movimentações.</p>
+            <Button variant="outline" onClick={() => setDialog("credito")}>
+              <Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo (em conta bancária)
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -159,6 +166,7 @@ function CaixaPage() {
             <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores</Button>
             <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa</Button>
             <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
+            <Button variant="outline" onClick={() => setDialog("credito")}><Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo</Button>
           </div>
 
           <Card>
@@ -222,6 +230,8 @@ function CaixaPage() {
         </CardContent>
       </Card>
 
+      <PosicaoFinanceira />
+
       {caixa && (
         <>
           <DialogMovimento
@@ -239,6 +249,14 @@ function CaixaPage() {
           />
         </>
       )}
+
+      <DialogCredito
+        open={dialog === "credito"}
+        onOpenChange={(v) => !v && setDialog(null)}
+        caixaId={caixa?.id ?? null}
+        onDone={() => { setDialog(null); invalidar(); }}
+      />
+
     </div>
   );
 }
@@ -423,5 +441,41 @@ function DialogPagarConta({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Posição financeira consolidada: caixa/bancos, compromissos e crédito tomado. */
+function PosicaoFinanceira() {
+  const { data: bancos = [] } = useQuery({
+    queryKey: ["bal-bancos"],
+    queryFn: async () => (await supabase.from("contas_bancarias").select("id, nome, saldo").eq("ativo", true)).data ?? [],
+  });
+  const { data: dividas = [] } = useQuery({
+    queryKey: ["dividas"],
+    queryFn: async () => (await supabase.from("dividas").select("credor, saldo_devedor, valor_parcela, status").in("status", ["ativa", "renegociada"])).data ?? [],
+  });
+  const { data: aPagar = [] } = useQuery({
+    queryKey: ["contas-pagar-abertas"],
+    queryFn: async () => (await supabase.from("contas_pagar").select("valor, data_vencimento, status").in("status", ["pendente", "atrasada"])).data ?? [],
+  });
+
+  const saldoBancos = bancos.reduce((s, b) => s + Number(b.saldo ?? 0), 0);
+  const totalDividas = dividas.reduce((s, d) => s + Number(d.saldo_devedor ?? 0), 0);
+  const parcelasMes = dividas.reduce((s, d) => s + Number(d.valor_parcela ?? 0), 0);
+  const fimMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10);
+  const aPagarMes = aPagar.filter((c) => c.data_vencimento <= fimMes).reduce((s, c) => s + Number(c.valor), 0);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2"><Landmark className="h-4 w-4 text-primary" /> Posição financeira</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Saldo em bancos" value={brl(saldoBancos)} icon={Wallet} status="neutral" hint={`${bancos.length} conta(s)`} />
+        <KpiCard label="A pagar até o fim do mês" value={brl(aPagarMes)} icon={FileText} status={aPagarMes > 0 ? "warning" : "healthy"} hint="Contas a pagar pendentes e atrasadas" />
+        <KpiCard label="Crédito tomado (saldo)" value={brl(totalDividas)} icon={Landmark} status={totalDividas > 0 ? "warning" : "healthy"} hint={`${dividas.length} contrato(s) ativo(s)`} />
+        <KpiCard label="Parcelas mensais" value={brl(parcelasMes)} icon={Receipt} status="neutral" hint="Compromisso fixo mensal com credores" />
+      </CardContent>
+    </Card>
   );
 }
