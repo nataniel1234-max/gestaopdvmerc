@@ -141,8 +141,11 @@ function CaixaPage() {
 
       {!caixa ? (
         <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            Nenhum caixa aberto. Abra o caixa para registrar movimentações.
+          <CardContent className="py-10 text-center text-muted-foreground space-y-3">
+            <p>Nenhum caixa aberto. Abra o caixa para registrar movimentações.</p>
+            <Button variant="outline" onClick={() => setDialog("credito")}>
+              <Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo (em conta bancária)
+            </Button>
           </CardContent>
         </Card>
       ) : (
