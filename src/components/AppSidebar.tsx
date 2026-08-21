@@ -43,8 +43,10 @@ type NavItem = {
 const operacao: NavItem[] = [
   { title: "PDV — Caixa (nova janela)", url: "/pdv", icon: ShoppingCart, external: true },
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Caixa", url: "/caixa", icon: Wallet },
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
 ];
+
 
 const cadastros = [
   { title: "Produtos", url: "/produtos", icon: Package },
