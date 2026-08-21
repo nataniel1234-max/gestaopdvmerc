@@ -238,7 +238,57 @@ function EntradasPage() {
               </TableBody>
             </Table>
 
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Wallet className="h-4 w-4" /> Condição de pagamento
+                <Badge variant={condicao === "avista" ? "default" : "secondary"}>{condicao === "avista" ? "À vista" : "A prazo"}</Badge>
+              </div>
+              <div className="grid md:grid-cols-3 gap-3">
+                <div>
+                  <Label>Condição</Label>
+                  <Select value={condicao} onValueChange={(v: "avista" | "prazo") => setCondicao(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="avista">À vista (baixa imediata)</SelectItem>
+                      <SelectItem value="prazo">A prazo (contas a pagar)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Forma de pagamento</Label>
+                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {formas.map((f) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Categoria financeira</Label>
+                  <Select value={categoria_id} onValueChange={setCategoria}>
+                    <SelectTrigger><SelectValue placeholder="Fornecedores / Mercadorias" /></SelectTrigger>
+                    <SelectContent>
+                      {categoriasDespesa.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {condicao === "prazo" && (
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div><Label>Parcelas</Label><Input type="number" min="1" value={parcelas} onChange={(e) => setParcelas(e.target.value)} /></div>
+                  <div><Label>1º vencimento</Label><Input type="date" value={primeiroVenc} onChange={(e) => setPrimeiroVenc(e.target.value)} /></div>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <CalendarClock className="h-3 w-3" />
+                {condicao === "avista"
+                  ? "Gera um lançamento já quitado em Contas a Pagar; em dinheiro também sai do caixa aberto."
+                  : `Gera ${Math.max(1, Number(parcelas) || 1)} parcela(s) em Contas a Pagar com intervalo de 30 dias.`}
+              </p>
+            </div>
+
             <div><Label>Observações</Label><Input value={observacoes} onChange={(e) => setObs(e.target.value)} /></div>
+
           </CardContent>
         </Card>
 
