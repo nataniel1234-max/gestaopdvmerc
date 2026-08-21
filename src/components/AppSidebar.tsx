@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Wallet,
   Landmark,
+  Boxes,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -49,6 +50,7 @@ const cadastros = [
   { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Fornecedores", url: "/fornecedores", icon: Truck },
+  { title: "Estoque", url: "/estoque", icon: Boxes },
 ];
 
 const movimentos = [

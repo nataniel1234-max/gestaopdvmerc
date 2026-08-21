@@ -18,6 +18,7 @@ import { Route as ImportarExportarRouteImport } from './routes/importar-exportar
 import { Route as FornecedoresRouteImport } from './routes/fornecedores'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as FiadoRouteImport } from './routes/fiado'
+import { Route as EstoqueRouteImport } from './routes/estoque'
 import { Route as EntradasRouteImport } from './routes/entradas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ComercioRouteImport } from './routes/comercio'
@@ -82,6 +83,11 @@ const FinanceiroRoute = FinanceiroRouteImport.update({
 const FiadoRoute = FiadoRouteImport.update({
   id: '/fiado',
   path: '/fiado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstoqueRoute = EstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntradasRoute = EntradasRouteImport.update({
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/comercio': typeof ComercioRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/entradas': typeof EntradasRoute
+  '/estoque': typeof EstoqueRoute
   '/fiado': typeof FiadoRoute
   '/financeiro': typeof FinanceiroRouteWithChildren
   '/fornecedores': typeof FornecedoresRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/comercio': typeof ComercioRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/entradas': typeof EntradasRoute
+  '/estoque': typeof EstoqueRoute
   '/fiado': typeof FiadoRoute
   '/fornecedores': typeof FornecedoresRoute
   '/importar-exportar': typeof ImportarExportarRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/comercio': typeof ComercioRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/entradas': typeof EntradasRoute
+  '/estoque': typeof EstoqueRoute
   '/fiado': typeof FiadoRoute
   '/financeiro': typeof FinanceiroRouteWithChildren
   '/fornecedores': typeof FornecedoresRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/comercio'
     | '/configuracoes'
     | '/entradas'
+    | '/estoque'
     | '/fiado'
     | '/financeiro'
     | '/fornecedores'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/comercio'
     | '/configuracoes'
     | '/entradas'
+    | '/estoque'
     | '/fiado'
     | '/fornecedores'
     | '/importar-exportar'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/comercio'
     | '/configuracoes'
     | '/entradas'
+    | '/estoque'
     | '/fiado'
     | '/financeiro'
     | '/fornecedores'
@@ -383,6 +395,7 @@ export interface RootRouteChildren {
   ComercioRoute: typeof ComercioRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   EntradasRoute: typeof EntradasRoute
+  EstoqueRoute: typeof EstoqueRoute
   FiadoRoute: typeof FiadoRoute
   FinanceiroRoute: typeof FinanceiroRouteWithChildren
   FornecedoresRoute: typeof FornecedoresRoute
@@ -457,6 +470,13 @@ declare module '@tanstack/react-router' {
       path: '/fiado'
       fullPath: '/fiado'
       preLoaderRoute: typeof FiadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estoque': {
+      id: '/estoque'
+      path: '/estoque'
+      fullPath: '/estoque'
+      preLoaderRoute: typeof EstoqueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entradas': {
@@ -644,6 +664,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComercioRoute: ComercioRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   EntradasRoute: EntradasRoute,
+  EstoqueRoute: EstoqueRoute,
   FiadoRoute: FiadoRoute,
   FinanceiroRoute: FinanceiroRouteWithChildren,
   FornecedoresRoute: FornecedoresRoute,
