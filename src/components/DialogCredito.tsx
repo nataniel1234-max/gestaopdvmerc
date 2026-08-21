@@ -11,6 +11,7 @@ import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { Landmark } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto } from "@/lib/predefinicoes";
+import { movimentarCaixaEmpresa, movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
 
 /** Parcela pela Tabela Price (juros compostos ao mês). */
 function calcularParcela(principal: number, taxaMensalPct: number, n: number) {
@@ -27,8 +28,8 @@ function somaMeses(base: Date, meses: number) {
 }
 
 export function DialogCredito({
-  open, onOpenChange, caixaId, onDone,
-}: { open: boolean; onOpenChange: (v: boolean) => void; caixaId?: string | null; onDone: () => void }) {
+  open, onOpenChange, onDone,
+}: { open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
   const qc = useQueryClient();
   const [credor, setCredor] = useState("");
   const [valor, setValor] = useState("");
@@ -36,7 +37,7 @@ export function DialogCredito({
   const [tarifas, setTarifas] = useState("0");
   const [parcelas, setParcelas] = useState("1");
   const [carencia, setCarencia] = useState("1");
-  const [destino, setDestino] = useState<"caixa" | "banco">("caixa");
+  const [destino, setDestino] = useState<"empresa" | "banco">("empresa");
   const [bancoId, setBancoId] = useState<string>("");
   const [categoriaId, setCategoriaId] = useState<string>("none");
   const [centroId, setCentroId] = useState<string>("none");
@@ -65,7 +66,6 @@ export function DialogCredito({
       if (!credor.trim()) throw new Error("Informe o credor / instituição");
       if (!(principal > 0)) throw new Error("Informe o valor do crédito");
       if (destino === "banco" && !bancoId) throw new Error("Selecione a conta bancária de destino");
-      if (destino === "caixa" && !caixaId) throw new Error("Abra o caixa para lançar o crédito em dinheiro");
 
       const hoje = new Date();
       const hojeISO = hoje.toISOString().slice(0, 10);
@@ -75,7 +75,7 @@ export function DialogCredito({
         .from("dividas")
         .insert({
           credor: credor.trim(),
-          descricao: `Crédito ${destino === "caixa" ? "recebido em caixa" : "creditado em conta"}${obs ? ` — ${obs}` : ""}`,
+          descricao: `Crédito ${destino === "empresa" ? "recebido no caixa da empresa" : "creditado em conta"}${obs ? ` — ${obs}` : ""}`,
           valor_original: principal,
           saldo_devedor: totalPagar,
           taxa_juros_mensal: taxaNum,
@@ -106,24 +106,12 @@ export function DialogCredito({
       const { error: eCp } = await supabase.from("contas_pagar").insert(linhas);
       if (eCp) throw eCp;
 
-      // 3) Entrada do valor líquido: caixa ou conta bancária
-      if (destino === "caixa") {
-        const { error: eMov } = await supabase.from("movimentacoes_caixa").insert({
-          caixa_id: caixaId!,
-          tipo: "suprimento",
-          forma_pagamento: "dinheiro",
-          valor: liquido,
-          descricao: `Crédito recebido — ${credor.trim()}`,
-          referencia_id: divida!.id,
-        });
-        if (eMov) throw eMov;
+      // 3) Entrada do valor líquido: caixa da empresa (tesouraria) ou conta bancária.
+      //    Nunca entra no caixa do PDV — o PDV só registra vendas e movimentos de loja.
+      if (destino === "empresa") {
+        await movimentarCaixaEmpresa(liquido);
       } else {
-        const banco = bancos.find((b) => b.id === bancoId);
-        const { error: eB } = await supabase
-          .from("contas_bancarias")
-          .update({ saldo: Number(banco?.saldo ?? 0) + liquido })
-          .eq("id", bancoId);
-        if (eB) throw eB;
+        await movimentarConta(bancoId, liquido);
       }
 
       // 4) Tarifas/IOF como despesa do período (entra no DRE e na classificação)
@@ -132,7 +120,7 @@ export function DialogCredito({
           descricao: `Tarifas/IOF do crédito — ${credor.trim()}`,
           valor: tarifasNum,
           data: hojeISO,
-          forma_pagamento: destino === "caixa" ? "dinheiro" : "Transferência",
+          forma_pagamento: destino === "empresa" ? "dinheiro" : "Transferência",
           categoria_id: categoriaId === "none" ? null : categoriaId,
           centro_custo_id: centroId === "none" ? null : centroId,
           observacoes: "Descontado do valor liberado do crédito",
@@ -141,10 +129,10 @@ export function DialogCredito({
       }
     },
     onSuccess: () => {
-      toast.success("Crédito lançado: caixa/banco, contas a pagar e dívidas atualizados");
+      toast.success("Crédito lançado no caixa da empresa/banco, com parcelas em contas a pagar");
       setCredor(""); setValor(""); setTarifas("0"); setObs("");
       ["caixa-movs", "caixa-aberto", "contas_pagar", "contas-pagar-abertas", "dividas", "fin-dividas",
-       "bal-dividas", "bal-bancos", "despesas", "contas-bancarias-credito"]
+       "bal-dividas", "bal-bancos", "despesas", "contas-bancarias-credito", "caixa-empresa"]
         .forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
       onDone();
     },
@@ -173,10 +161,10 @@ export function DialogCredito({
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Recebimento em</Label>
-              <Select value={destino} onValueChange={(v) => setDestino(v as "caixa" | "banco")}>
+              <Select value={destino} onValueChange={(v) => setDestino(v as "empresa" | "banco")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="caixa">Caixa (dinheiro)</SelectItem>
+                  <SelectItem value="empresa">{NOME_CAIXA_EMPRESA} (dinheiro)</SelectItem>
                   <SelectItem value="banco">Conta bancária</SelectItem>
                 </SelectContent>
               </Select>

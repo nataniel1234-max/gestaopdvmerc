@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 import { DialogCredito } from "@/components/DialogCredito";
+import { movimentarCaixaEmpresa, obterCaixaEmpresa, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -162,7 +163,7 @@ function CaixaPage() {
               hint={`${vendas.length} cupons · a prazo ${brl(resumo.aPrazo)} (fora do caixa)`} />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="hidden">
             <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores</Button>
             <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa</Button>
             <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
@@ -262,8 +263,8 @@ function CaixaPage() {
 }
 
 function DialogMovimento({
-  tipo, open, onOpenChange, caixaId, onDone,
-}: { tipo: "suprimento" | "despesa"; open: boolean; onOpenChange: (v: boolean) => void; caixaId: string; onDone: () => void }) {
+  tipo, open, onOpenChange, onDone,
+}: { tipo: "suprimento" | "despesa"; open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [forma, setForma] = useState<Forma>("dinheiro");
@@ -276,10 +277,8 @@ function DialogMovimento({
     mutationFn: async () => {
       const v = Number(valor);
       if (!(v > 0)) throw new Error("Informe um valor válido");
-      const { error } = await supabase.from("movimentacoes_caixa").insert({
-        caixa_id: caixaId, tipo, valor: v, forma_pagamento: forma, descricao: descricao || null,
-      });
-      if (error) throw error;
+      // Movimenta apenas o caixa financeiro da empresa — não o caixa aberto no PDV.
+      if (forma === "dinheiro") await movimentarCaixaEmpresa(tipo === "suprimento" ? v : -v);
       if (tipo === "despesa") {
         const { error: e2 } = await supabase.from("despesas").insert({
           descricao: descricao || "Saída de caixa",
@@ -288,7 +287,7 @@ function DialogMovimento({
           forma_pagamento: forma,
           categoria_id: categoriaId === "none" ? null : categoriaId,
           centro_custo_id: centroId === "none" ? null : centroId,
-          observacoes: "Lançada pelo Caixa",
+          observacoes: "Lançada no caixa da empresa",
         });
         if (e2) throw e2;
       }
@@ -305,8 +304,11 @@ function DialogMovimento({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{tipo === "suprimento" ? "Entrada de valores no caixa" : "Saída para despesa"}</DialogTitle>
+          <DialogTitle>{tipo === "suprimento" ? `Entrada de valores no ${NOME_CAIXA_EMPRESA.toLowerCase()}` : "Saída para despesa (empresa)"}</DialogTitle>
         </DialogHeader>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Este lançamento afeta o caixa financeiro da empresa e os relatórios — não entra no caixa do PDV.
+        </p>
         <div className="grid gap-3 py-2">
           <div><Label>Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} autoFocus /></div>
           <div>
@@ -352,8 +354,8 @@ function DialogMovimento({
 }
 
 function DialogPagarConta({
-  open, onOpenChange, caixaId, onDone,
-}: { open: boolean; onOpenChange: (v: boolean) => void; caixaId: string; onDone: () => void }) {
+  open, onOpenChange, onDone,
+}: { open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
   const [contaId, setContaId] = useState<string>("");
   const [forma, setForma] = useState<string>("dinheiro");
   const { data: formas = [] } = useFormasPagamento();
@@ -379,13 +381,9 @@ function DialogPagarConta({
         .update({ status: "paga", data_pagamento: hoje, forma_pagamento: forma })
         .eq("id", conta.id);
       if (error) throw error;
-      const saiDoCaixa = forma.toLowerCase().includes("dinheiro");
-      if (saiDoCaixa) {
-        const { error: e2 } = await supabase.from("movimentacoes_caixa").insert({
-          caixa_id: caixaId, tipo: "despesa", valor: Number(conta.valor), forma_pagamento: "dinheiro",
-          descricao: `Pagamento: ${conta.descricao}`, referencia_id: conta.id,
-        });
-        if (e2) throw e2;
+      // Pagamento em dinheiro sai do caixa da empresa (tesouraria), nunca do caixa do PDV.
+      if (forma.toLowerCase().includes("dinheiro")) {
+        await movimentarCaixaEmpresa(-Number(conta.valor));
       }
     },
     onSuccess: () => { toast.success("Conta paga"); setContaId(""); onDone(); },
@@ -417,7 +415,7 @@ function DialogPagarConta({
             <Select value={forma} onValueChange={setForma}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro (sai do caixa)</SelectItem>
+                <SelectItem value="dinheiro">Dinheiro (sai do caixa da empresa)</SelectItem>
                 {formas.filter((f) => f.tipo_base !== "dinheiro").map((f) => (
                   <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>
                 ))}
