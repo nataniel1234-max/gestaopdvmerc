@@ -9,10 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Save, ArrowDownToLine } from "lucide-react";
+import { Plus, Trash2, Save, ArrowDownToLine, Wallet, CalendarClock } from "lucide-react";
 import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { aplicarMovimentacao } from "@/lib/estoque";
+import { useFormasPagamento, useCategoriasFinanceiras } from "@/lib/predefinicoes";
+import { getCaixaAberto } from "@/lib/caixa";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/entradas")({
   head: () => ({ meta: [{ title: "Entrada de Mercadoria — Mercadinho" }] }),
@@ -20,6 +23,12 @@ export const Route = createFileRoute("/entradas")({
 });
 
 type Item = { produto_id: string; produto_nome: string; quantidade: number; preco_custo: number; vendido_por_peso?: boolean; unidade?: string };
+
+const addDias = (base: string, dias: number) => {
+  const d = new Date(`${base}T12:00:00`);
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+};
 
 function EntradasPage() {
   const qc = useQueryClient();
@@ -29,6 +38,15 @@ function EntradasPage() {
   const [observacoes, setObs] = useState("");
   const [busca, setBusca] = useState("");
   const [itens, setItens] = useState<Item[]>([]);
+  const [condicao, setCondicao] = useState<"avista" | "prazo">("avista");
+  const [formaPagamento, setFormaPagamento] = useState("Dinheiro");
+  const [categoria_id, setCategoria] = useState("");
+  const [parcelas, setParcelas] = useState("1");
+  const [primeiroVenc, setPrimeiroVenc] = useState(addDias(new Date().toISOString().slice(0, 10), 30));
+
+  const { data: formas = [] } = useFormasPagamento();
+  const { data: categoriasDespesa = [] } = useCategoriasFinanceiras("despesa");
+
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos-busca"],
@@ -81,15 +99,70 @@ function EntradasPage() {
           quantidade: it.quantidade, custo_unitario: it.preco_custo, referencia_id: nota.id,
         });
       }
+
+      const descBase = `Compra${numero_nota ? ` NF ${numero_nota}` : ""}${fornecedor_id ? "" : " (sem fornecedor)"}`;
+
+      if (condicao === "avista") {
+        // Compra à vista: quita imediatamente e cruza com o caixa quando for dinheiro
+        const { error: eCP } = await supabase.from("contas_pagar").insert({
+          descricao: descBase,
+          fornecedor_id: fornecedor_id || null,
+          categoria_id: categoria_id || null,
+          valor: total,
+          data_vencimento: data_entrada,
+          data_pagamento: data_entrada,
+          status: "paga",
+          forma_pagamento: formaPagamento,
+          observacoes: observacoes || null,
+        });
+        if (eCP) throw eCP;
+
+        if (formaPagamento.toLowerCase().includes("dinheiro")) {
+          const caixa = await getCaixaAberto();
+          if (!caixa) throw new Error("Compra à vista em dinheiro exige caixa aberto. Abra o caixa no PDV ou escolha outra forma.");
+          const { error: eMov } = await supabase.from("movimentacoes_caixa").insert({
+            caixa_id: caixa.id,
+            tipo: "despesa",
+            forma_pagamento: "dinheiro",
+            valor: total,
+            descricao: descBase,
+            referencia_id: nota.id,
+          });
+          if (eMov) throw eMov;
+        }
+      } else {
+        // Compra a prazo: gera as parcelas em Contas a Pagar
+        const n = Math.max(1, Number(parcelas) || 1);
+        const valorParcela = Math.round((total / n) * 100) / 100;
+        const linhas = Array.from({ length: n }, (_, i) => ({
+          descricao: `${descBase}${n > 1 ? ` — ${i + 1}/${n}` : ""}`,
+          fornecedor_id: fornecedor_id || null,
+          categoria_id: categoria_id || null,
+          valor: i === n - 1 ? Math.round((total - valorParcela * (n - 1)) * 100) / 100 : valorParcela,
+          data_vencimento: addDias(primeiroVenc, i * 30),
+          status: "pendente" as const,
+          forma_pagamento: formaPagamento,
+          parcela_atual: i + 1,
+          parcelas_total: n,
+          observacoes: observacoes || null,
+        }));
+        const { error: eCP } = await supabase.from("contas_pagar").insert(linhas);
+        if (eCP) throw eCP;
+      }
     },
     onSuccess: () => {
-      toast.success("Entrada lançada com sucesso");
+      toast.success(condicao === "avista" ? "Entrada lançada e baixada no financeiro" : "Entrada lançada e parcelas geradas em Contas a Pagar");
       setItens([]); setNumero(""); setObs("");
       qc.invalidateQueries({ queryKey: ["notas-entrada"] });
       qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["estoque-produtos"] });
+      qc.invalidateQueries({ queryKey: ["contas-pagar"] });
+      qc.invalidateQueries({ queryKey: ["bal-cp"] });
+      qc.invalidateQueries({ queryKey: ["caixa-movimentacoes"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <div>
@@ -165,7 +238,57 @@ function EntradasPage() {
               </TableBody>
             </Table>
 
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Wallet className="h-4 w-4" /> Condição de pagamento
+                <Badge variant={condicao === "avista" ? "default" : "secondary"}>{condicao === "avista" ? "À vista" : "A prazo"}</Badge>
+              </div>
+              <div className="grid md:grid-cols-3 gap-3">
+                <div>
+                  <Label>Condição</Label>
+                  <Select value={condicao} onValueChange={(v: "avista" | "prazo") => setCondicao(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="avista">À vista (baixa imediata)</SelectItem>
+                      <SelectItem value="prazo">A prazo (contas a pagar)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Forma de pagamento</Label>
+                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {formas.map((f) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Categoria financeira</Label>
+                  <Select value={categoria_id} onValueChange={setCategoria}>
+                    <SelectTrigger><SelectValue placeholder="Fornecedores / Mercadorias" /></SelectTrigger>
+                    <SelectContent>
+                      {categoriasDespesa.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {condicao === "prazo" && (
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div><Label>Parcelas</Label><Input type="number" min="1" value={parcelas} onChange={(e) => setParcelas(e.target.value)} /></div>
+                  <div><Label>1º vencimento</Label><Input type="date" value={primeiroVenc} onChange={(e) => setPrimeiroVenc(e.target.value)} /></div>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <CalendarClock className="h-3 w-3" />
+                {condicao === "avista"
+                  ? "Gera um lançamento já quitado em Contas a Pagar; em dinheiro também sai do caixa aberto."
+                  : `Gera ${Math.max(1, Number(parcelas) || 1)} parcela(s) em Contas a Pagar com intervalo de 30 dias.`}
+              </p>
+            </div>
+
             <div><Label>Observações</Label><Input value={observacoes} onChange={(e) => setObs(e.target.value)} /></div>
+
           </CardContent>
         </Card>
 

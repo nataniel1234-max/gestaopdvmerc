@@ -123,7 +123,7 @@ function BalancoPage() {
 
   const { data: dividas = [] } = useQuery({
     queryKey: ["bal-dividas"],
-    queryFn: async () => (await supabase.from("dividas").select("saldo_devedor").eq("status", "ativa")).data ?? [],
+    queryFn: async () => (await supabase.from("dividas").select("credor, saldo_devedor, status, valor_parcela").in("status", ["ativa", "renegociada"])).data ?? [],
   });
   const dividasPassivoCurto = dividas.reduce((s, d) => s + Number(d.saldo_devedor), 0);
 
@@ -158,7 +158,7 @@ function BalancoPage() {
   const ativoTotal = ativoCirculante + ativoNaoCirculante;
 
   const passivoCirculante = contasPagarPassivo + dividasPassivoCurto;
-  const passivoNaoCirculante = totalPLPAtivas + totalPLPInativas;
+  const passivoNaoCirculante = totalPLPAtivas;
   const passivoTotal = passivoCirculante + passivoNaoCirculante;
 
   const patrimonioLiquidoCalc = ativoTotal - passivoTotal;
@@ -266,12 +266,18 @@ function BalancoPage() {
                 <div className="divide-y divide-border">
                   <Section title="Passivo Circulante" />
                   <Line icon={CreditCard} label="Contas a pagar / fornecedores" value={contasPagarPassivo} />
-                  <Line icon={Landmark} label="Dívidas operacionais" value={dividasPassivoCurto} />
+                  <Line icon={Landmark} label="Dívidas (ativas e renegociadas)" value={dividasPassivoCurto} hint={dividas.length ? `${dividas.length} contrato(s)` : "Nenhum contrato lançado"} />
+                  {dividas.map((d: any, i: number) => (
+                    <Line key={i} label={`↳ ${d.credor}${d.status === "renegociada" ? " (renegociada)" : ""}`} value={Number(d.saldo_devedor)} />
+                  ))}
                   <Line label="Subtotal Circulante" value={passivoCirculante} bold />
 
                   <Section title="Passivo Não Circulante" />
                   <Line icon={Landmark} label="Financiamentos / longo prazo (ativas)" value={totalPLPAtivas} />
-                  <Line icon={Landmark} label="Obrigações inativas" value={totalPLPInativas} hint="Não impactam fluxo de caixa" />
+                  {plp.filter((p: any) => p.ativo).map((p: any) => (
+                    <Line key={p.id} label={`↳ ${lbl(PLP_TIPOS, p.tipo)} — ${p.credor}`} value={Number(p.saldo_devedor)} />
+                  ))}
+                  <Line icon={Landmark} label="Obrigações inativas (memória)" value={totalPLPInativas} hint="Quitadas/baixadas — não somam ao passivo" />
                   <Line label="Subtotal Não Circulante" value={passivoNaoCirculante} bold />
                   <Line label="PASSIVO TOTAL" value={passivoTotal} bold highlight="bad" />
 
