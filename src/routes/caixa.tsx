@@ -160,6 +160,7 @@ function CaixaPage() {
             <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores</Button>
             <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa</Button>
             <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
+            <Button variant="outline" onClick={() => setDialog("credito")}><Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo</Button>
           </div>
 
           <Card>
