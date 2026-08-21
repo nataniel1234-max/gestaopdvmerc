@@ -474,9 +474,20 @@ function PDVPage() {
         </div>
       )}
 
+      {/* Barra fixa de finalização (mobile) */}
+      {caixaAberto && carrinho.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-card px-3 py-2 flex items-center gap-3 print:hidden">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase text-muted-foreground">Total · {carrinho.length} itens</div>
+            <div className="text-xl font-bold tabular-nums truncate">{brl(total)}</div>
+          </div>
+          <Button size="lg" className="shrink-0" onClick={() => setPagOpen(true)}>Finalizar</Button>
+        </div>
+      )}
+
       {/* Modal de pagamento */}
       <Dialog open={pagOpen} onOpenChange={setPagOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Pagamento</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="bg-muted p-3 rounded-md flex justify-between items-baseline">
@@ -485,7 +496,7 @@ function PDVPage() {
 
             <div>
               <Label>Forma de pagamento</Label>
-              <div className="grid grid-cols-5 gap-2 mt-1">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-1">
                 {(["dinheiro", "debito", "credito", "pix", "fiado"] as Forma[]).map((f) => {
                   const atalhos: Record<Forma, string> = { dinheiro: "D", debito: "X", credito: "C", pix: "P", fiado: "F" };
                   return (
