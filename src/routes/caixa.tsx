@@ -21,7 +21,7 @@ import {
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 import { DialogCredito } from "@/components/DialogCredito";
 import { movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
-import { SelectContaDestino, DialogNovaConta, useContasFinanceiras } from "@/components/SelectContaDestino";
+import { SelectContaDestino, DialogNovaConta } from "@/components/SelectContaDestino";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -481,7 +481,7 @@ function PosicaoFinanceira() {
         <CardTitle className="text-base flex items-center gap-2"><Landmark className="h-4 w-4 text-primary" /> Posição financeira</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Saldo em bancos" value={brl(saldoBancos)} icon={Wallet} status="neutral" hint={`${bancos.length} conta(s)`} />
+        <KpiCard label="Caixa da empresa e bancos" value={brl(saldoBancos)} icon={Wallet} status="neutral" hint={`${bancos.length} conta(s) financeiras`} />
         <KpiCard label="A pagar até o fim do mês" value={brl(aPagarMes)} icon={FileText} status={aPagarMes > 0 ? "warning" : "healthy"} hint="Contas a pagar pendentes e atrasadas" />
         <KpiCard label="Crédito tomado (saldo)" value={brl(totalDividas)} icon={Landmark} status={totalDividas > 0 ? "warning" : "healthy"} hint={`${dividas.length} contrato(s) ativo(s)`} />
         <KpiCard label="Parcelas mensais" value={brl(parcelasMes)} icon={Receipt} status="neutral" hint="Compromisso fixo mensal com credores" />

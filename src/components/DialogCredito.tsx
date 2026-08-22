@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,8 @@ import { brl, dtShort } from "@/lib/format";
 import { toast } from "sonner";
 import { Landmark } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto } from "@/lib/predefinicoes";
-import { movimentarCaixaEmpresa, movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
+import { movimentarConta } from "@/lib/caixa-empresa";
+import { SelectContaDestino } from "@/components/SelectContaDestino";
 
 /** Parcela pela Tabela Price (juros compostos ao mês). */
 function calcularParcela(principal: number, taxaMensalPct: number, n: number) {
@@ -37,21 +38,13 @@ export function DialogCredito({
   const [tarifas, setTarifas] = useState("0");
   const [parcelas, setParcelas] = useState("1");
   const [carencia, setCarencia] = useState("1");
-  const [destino, setDestino] = useState<"empresa" | "banco">("empresa");
-  const [bancoId, setBancoId] = useState<string>("");
+  const [contaId, setContaId] = useState<string>("");
   const [categoriaId, setCategoriaId] = useState<string>("none");
   const [centroId, setCentroId] = useState<string>("none");
   const [obs, setObs] = useState("");
 
   const { data: categorias = [] } = useCategoriasFinanceiras("despesa");
   const { data: centros = [] } = useCentrosCusto();
-  const { data: bancos = [] } = useQuery({
-    queryKey: ["contas-bancarias-credito"],
-    enabled: open,
-    queryFn: async () =>
-      ((await supabase.from("contas_bancarias").select("id, nome, saldo, tipo").eq("ativo", true).order("nome")).data ?? []) as any[],
-  });
-
   const principal = Number(valor) || 0;
   const nParc = Math.max(1, Number(parcelas) || 1);
   const taxaNum = Number(taxa) || 0;
@@ -65,7 +58,7 @@ export function DialogCredito({
     mutationFn: async () => {
       if (!credor.trim()) throw new Error("Informe o credor / instituição");
       if (!(principal > 0)) throw new Error("Informe o valor do crédito");
-      if (destino === "banco" && !bancoId) throw new Error("Selecione a conta bancária de destino");
+      if (!contaId) throw new Error("Selecione a conta de destino do crédito");
 
       const hoje = new Date();
       const hojeISO = hoje.toISOString().slice(0, 10);
@@ -75,7 +68,7 @@ export function DialogCredito({
         .from("dividas")
         .insert({
           credor: credor.trim(),
-          descricao: `Crédito ${destino === "empresa" ? "recebido no caixa da empresa" : "creditado em conta"}${obs ? ` — ${obs}` : ""}`,
+          descricao: `Crédito recebido${obs ? ` — ${obs}` : ""}`,
           valor_original: principal,
           saldo_devedor: totalPagar,
           taxa_juros_mensal: taxaNum,
@@ -108,11 +101,7 @@ export function DialogCredito({
 
       // 3) Entrada do valor líquido: caixa da empresa (tesouraria) ou conta bancária.
       //    Nunca entra no caixa do PDV — o PDV só registra vendas e movimentos de loja.
-      if (destino === "empresa") {
-        await movimentarCaixaEmpresa(liquido);
-      } else {
-        await movimentarConta(bancoId, liquido);
-      }
+      await movimentarConta(contaId, liquido);
 
       // 4) Tarifas/IOF como despesa do período (entra no DRE e na classificação)
       if (tarifasNum > 0) {
@@ -120,7 +109,7 @@ export function DialogCredito({
           descricao: `Tarifas/IOF do crédito — ${credor.trim()}`,
           valor: tarifasNum,
           data: hojeISO,
-          forma_pagamento: destino === "empresa" ? "dinheiro" : "Transferência",
+          forma_pagamento: "Transferência",
           categoria_id: categoriaId === "none" ? null : categoriaId,
           centro_custo_id: centroId === "none" ? null : centroId,
           observacoes: "Descontado do valor liberado do crédito",
@@ -132,7 +121,7 @@ export function DialogCredito({
       toast.success("Crédito lançado no caixa da empresa/banco, com parcelas em contas a pagar");
       setCredor(""); setValor(""); setTarifas("0"); setObs("");
       ["caixa-movs", "caixa-aberto", "contas_pagar", "contas-pagar-abertas", "dividas", "fin-dividas",
-       "bal-dividas", "bal-bancos", "despesas", "contas-bancarias-credito", "caixa-empresa"]
+       "bal-dividas", "bal-bancos", "despesas", "contas-bancarias-credito", "contas-financeiras"]
         .forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
       onDone();
     },
@@ -159,36 +148,9 @@ export function DialogCredito({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label>Recebimento em</Label>
-              <Select value={destino} onValueChange={(v) => setDestino(v as "empresa" | "banco")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="empresa">{NOME_CAIXA_EMPRESA} (dinheiro)</SelectItem>
-                  <SelectItem value="banco">Conta bancária</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {destino === "banco" ? (
-              <div>
-                <Label>Conta bancária *</Label>
-                <Select value={bancoId} onValueChange={setBancoId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                  <SelectContent>
-                    {bancos.length === 0 ? (
-                      <SelectItem value="vazio" disabled>Nenhuma conta cadastrada</SelectItem>
-                    ) : bancos.map((b) => <SelectItem key={b.id} value={b.id}>{b.nome} · {brl(b.saldo)}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <div><Label>Tarifas / IOF descontados</Label><Input type="number" step="0.01" value={tarifas} onChange={(e) => setTarifas(e.target.value)} /></div>
-            )}
-          </div>
-
-          {destino === "banco" && (
+            <SelectContaDestino value={contaId} onChange={setContaId} enabled={open} label="Recebimento em (conta da empresa)" />
             <div><Label>Tarifas / IOF descontados</Label><Input type="number" step="0.01" value={tarifas} onChange={(e) => setTarifas(e.target.value)} /></div>
-          )}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
