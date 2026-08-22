@@ -33,12 +33,14 @@ type ProdutoForm = {
   estoque_minimo: string;
   fornecedor_id: string | null;
   vendido_por_peso: boolean;
+  variacao: string;
+  variacoes: string[];
 };
 
 const empty: ProdutoForm = {
   nome: "", codigo_barras: "", categoria: "", unidade: "UN",
   preco_custo: "0", preco_venda: "0", estoque_atual: "0", estoque_minimo: "0", fornecedor_id: null,
-  vendido_por_peso: false,
+  vendido_por_peso: false, variacao: "", variacoes: [],
 };
 
 function ProdutosPage() {
@@ -71,9 +73,8 @@ function ProdutosPage() {
 
   const salvar = useMutation({
     mutationFn: async (f: ProdutoForm) => {
-      const payload = {
+      const base = {
         nome: f.nome.trim(),
-        codigo_barras: f.codigo_barras.trim() || null,
         categoria: f.categoria.trim() || null,
         unidade: f.vendido_por_peso ? "KG" : f.unidade,
         preco_custo: Number(f.preco_custo),
@@ -84,16 +85,48 @@ function ProdutosPage() {
         vendido_por_peso: f.vendido_por_peso,
       };
       if (f.id) {
-        const { error } = await supabase.from("produtos").update(payload).eq("id", f.id);
+        const { error } = await supabase.from("produtos").update({
+          ...base,
+          codigo_barras: f.codigo_barras.trim() || null,
+          variacao: f.variacao.trim() || null,
+        }).eq("id", f.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("produtos").insert(payload);
-        if (error) throw error;
+        return 1;
       }
+      // Novo produto: se houver variações selecionadas, cria uma linha por variação
+      if (f.variacoes.length > 0) {
+        const { data: pai, error: e1 } = await supabase.from("produtos").insert({
+          ...base,
+          codigo_barras: f.codigo_barras.trim() || null,
+          variacao: f.variacoes[0],
+          estoque_atual: Number(f.estoque_atual),
+        }).select("id").single();
+        if (e1) throw e1;
+        const resto = f.variacoes.slice(1).map((v) => ({
+          ...base,
+          codigo_barras: null,
+          variacao: v,
+          produto_pai_id: pai.id,
+          estoque_atual: Number(f.estoque_atual),
+        }));
+        if (resto.length > 0) {
+          const { error: e2 } = await supabase.from("produtos").insert(resto);
+          if (e2) throw e2;
+        }
+        return f.variacoes.length;
+      }
+      const { error } = await supabase.from("produtos").insert({
+        ...base,
+        codigo_barras: f.codigo_barras.trim() || null,
+        variacao: f.variacao.trim() || null,
+      });
+      if (error) throw error;
+      return 1;
     },
-    onSuccess: () => {
-      toast.success("Produto salvo");
+    onSuccess: (qtd) => {
+      toast.success(qtd > 1 ? `${qtd} variações cadastradas` : "Produto salvo");
       qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["produtos-busca"] });
       setOpen(false); setForm(empty);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -115,6 +148,8 @@ function ProdutosPage() {
       estoque_atual: String(p.estoque_atual), estoque_minimo: String(p.estoque_minimo),
       fornecedor_id: p.fornecedor_id,
       vendido_por_peso: (p as { vendido_por_peso?: boolean }).vendido_por_peso ?? false,
+      variacao: (p as { variacao?: string | null }).variacao ?? "",
+      variacoes: [],
     });
     setOpen(true);
   };
