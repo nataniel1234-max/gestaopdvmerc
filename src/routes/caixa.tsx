@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 import { DialogCredito } from "@/components/DialogCredito";
-import { movimentarCaixaEmpresa, obterCaixaEmpresa, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
+import { movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
+import { SelectContaDestino, DialogNovaConta } from "@/components/SelectContaDestino";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -43,7 +44,7 @@ type Linha = { id: string; quando: string; tipo: string; descricao: string; valo
 
 function CaixaPage() {
   const qc = useQueryClient();
-  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta" | "credito">(null);
+  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta" | "credito" | "conta-bancaria">(null);
 
   const { data: caixa } = useQuery({
     queryKey: ["caixa-aberto"],
@@ -129,6 +130,7 @@ function CaixaPage() {
     qc.invalidateQueries({ queryKey: ["dividas"] });
     qc.invalidateQueries({ queryKey: ["bal-bancos"] });
     qc.invalidateQueries({ queryKey: ["despesas"] });
+    qc.invalidateQueries({ queryKey: ["contas-financeiras"] });
   };
 
   return (
@@ -143,19 +145,27 @@ function CaixaPage() {
         <CaixaControles />
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores (empresa)</Button>
+        <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa (empresa)</Button>
+        <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
+        <Button variant="outline" onClick={() => setDialog("credito")}><Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo</Button>
+        <Button variant="outline" onClick={() => setDialog("conta-bancaria")}><Wallet className="h-4 w-4 mr-1" /> Cadastrar conta bancária</Button>
+      </div>
+      <p className="text-xs text-muted-foreground -mt-4">
+        Créditos, despesas e pagamentos lançados aqui movimentam o caixa financeiro da empresa ou a conta bancária escolhida — nunca o caixa do PDV.
+      </p>
+
       {!caixa ? (
         <Card>
-          <CardContent className="py-10 text-center text-muted-foreground space-y-3">
-            <p>Nenhum caixa aberto. Abra o caixa para registrar movimentações.</p>
-            <Button variant="outline" onClick={() => setDialog("credito")}>
-              <Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo (em conta bancária)
-            </Button>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Nenhum caixa do PDV aberto. Os lançamentos financeiros da empresa acima continuam disponíveis.
           </CardContent>
         </Card>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard label="Saldo em dinheiro" value={brl(resumo.saldoDinheiro)} icon={Banknote} status="healthy" highlight
+            <KpiCard label="Saldo em dinheiro (PDV)" value={brl(resumo.saldoDinheiro)} icon={Banknote} status="healthy" highlight
               hint={`Abertura ${brl(caixa.valor_abertura)}`} />
             <KpiCard label="Entradas" value={brl(resumo.entradas)} icon={ArrowDownCircle} status="neutral" hint="Vendas à vista, recebimentos de fiado e suprimentos" />
             <KpiCard label="Saídas" value={brl(resumo.saidas)} icon={ArrowUpCircle} status="warning" hint="Sangrias, despesas e pagamentos" />
@@ -163,12 +173,6 @@ function CaixaPage() {
               hint={`${vendas.length} cupons · a prazo ${brl(resumo.aPrazo)} (fora do caixa)`} />
           </div>
 
-          <div className="hidden">
-            <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores</Button>
-            <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa</Button>
-            <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
-            <Button variant="outline" onClick={() => setDialog("credito")}><Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo</Button>
-          </div>
 
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Movimentação do caixa aberto</CardTitle></CardHeader>
@@ -233,29 +237,28 @@ function CaixaPage() {
 
       <PosicaoFinanceira />
 
-      {caixa && (
-        <>
-          <DialogMovimento
-            tipo={dialog === "entrada" ? "suprimento" : "despesa"}
-            open={dialog === "entrada" || dialog === "despesa"}
-            onOpenChange={(v) => !v && setDialog(null)}
-            caixaId={caixa.id}
-            onDone={() => { setDialog(null); invalidar(); }}
-          />
-          <DialogPagarConta
-            open={dialog === "conta"}
-            onOpenChange={(v) => !v && setDialog(null)}
-            caixaId={caixa.id}
-            onDone={() => { setDialog(null); invalidar(); }}
-          />
-        </>
-      )}
+      <DialogMovimento
+        tipo={dialog === "entrada" ? "suprimento" : "despesa"}
+        open={dialog === "entrada" || dialog === "despesa"}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
+        onDone={() => { setDialog(null); invalidar(); }}
+      />
+      <DialogPagarConta
+        open={dialog === "conta"}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
+        onDone={() => { setDialog(null); invalidar(); }}
+      />
 
       <DialogCredito
         open={dialog === "credito"}
-        onOpenChange={(v) => !v && setDialog(null)}
-        caixaId={caixa?.id ?? null}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
         onDone={() => { setDialog(null); invalidar(); }}
+      />
+
+      <DialogNovaConta
+        open={dialog === "conta-bancaria"}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
+        onCreated={() => invalidar()}
       />
 
     </div>
@@ -270,6 +273,7 @@ function DialogMovimento({
   const [forma, setForma] = useState<Forma>("dinheiro");
   const [categoriaId, setCategoriaId] = useState<string>("none");
   const [centroId, setCentroId] = useState<string>("none");
+  const [contaId, setContaId] = useState<string>("");
   const { data: categorias = [] } = useCategoriasFinanceiras(tipo === "despesa" ? "despesa" : "receita");
   const { data: centros = [] } = useCentrosCusto();
 
@@ -277,8 +281,9 @@ function DialogMovimento({
     mutationFn: async () => {
       const v = Number(valor);
       if (!(v > 0)) throw new Error("Informe um valor válido");
-      // Movimenta apenas o caixa financeiro da empresa — não o caixa aberto no PDV.
-      if (forma === "dinheiro") await movimentarCaixaEmpresa(tipo === "suprimento" ? v : -v);
+      // Movimenta apenas a conta financeira da empresa — nunca o caixa aberto no PDV.
+      if (!contaId) throw new Error("Selecione a conta de origem/destino");
+      await movimentarConta(contaId, tipo === "suprimento" ? v : -v);
       if (tipo === "despesa") {
         const { error: e2 } = await supabase.from("despesas").insert({
           descricao: descricao || "Saída de caixa",
@@ -311,6 +316,12 @@ function DialogMovimento({
         </p>
         <div className="grid gap-3 py-2">
           <div><Label>Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} autoFocus /></div>
+          <SelectContaDestino
+            value={contaId}
+            onChange={setContaId}
+            enabled={open}
+            label={tipo === "suprimento" ? "Conta de destino" : "Conta de origem do pagamento"}
+          />
           <div>
             <Label>Forma</Label>
             <Select value={forma} onValueChange={(v) => setForma(v as Forma)}>
@@ -358,6 +369,7 @@ function DialogPagarConta({
 }: { open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
   const [contaId, setContaId] = useState<string>("");
   const [forma, setForma] = useState<string>("dinheiro");
+  const [contaFinId, setContaFinId] = useState<string>("");
   const { data: formas = [] } = useFormasPagamento();
 
   const { data: contas = [] } = useQuery({
@@ -381,10 +393,9 @@ function DialogPagarConta({
         .update({ status: "paga", data_pagamento: hoje, forma_pagamento: forma })
         .eq("id", conta.id);
       if (error) throw error;
-      // Pagamento em dinheiro sai do caixa da empresa (tesouraria), nunca do caixa do PDV.
-      if (forma.toLowerCase().includes("dinheiro")) {
-        await movimentarCaixaEmpresa(-Number(conta.valor));
-      }
+      // O pagamento sai da conta financeira escolhida (caixa da empresa ou banco), nunca do caixa do PDV.
+      if (!contaFinId) throw new Error("Selecione a conta de pagamento");
+      await movimentarConta(contaFinId, -Number(conta.valor));
     },
     onSuccess: () => { toast.success("Conta paga"); setContaId(""); onDone(); },
     onError: (e: any) => toast.error(e.message ?? "Erro ao pagar"),
@@ -410,12 +421,13 @@ function DialogPagarConta({
               </SelectContent>
             </Select>
           </div>
+          <SelectContaDestino value={contaFinId} onChange={setContaFinId} enabled={open} label="Pagar com (conta da empresa)" />
           <div>
             <Label>Forma de pagamento</Label>
             <Select value={forma} onValueChange={setForma}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro (sai do caixa da empresa)</SelectItem>
+                <SelectItem value="dinheiro">Dinheiro</SelectItem>
                 {formas.filter((f) => f.tipo_base !== "dinheiro").map((f) => (
                   <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>
                 ))}
@@ -469,7 +481,7 @@ function PosicaoFinanceira() {
         <CardTitle className="text-base flex items-center gap-2"><Landmark className="h-4 w-4 text-primary" /> Posição financeira</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Saldo em bancos" value={brl(saldoBancos)} icon={Wallet} status="neutral" hint={`${bancos.length} conta(s)`} />
+        <KpiCard label="Caixa da empresa e bancos" value={brl(saldoBancos)} icon={Wallet} status="neutral" hint={`${bancos.length} conta(s) financeiras`} />
         <KpiCard label="A pagar até o fim do mês" value={brl(aPagarMes)} icon={FileText} status={aPagarMes > 0 ? "warning" : "healthy"} hint="Contas a pagar pendentes e atrasadas" />
         <KpiCard label="Crédito tomado (saldo)" value={brl(totalDividas)} icon={Landmark} status={totalDividas > 0 ? "warning" : "healthy"} hint={`${dividas.length} contrato(s) ativo(s)`} />
         <KpiCard label="Parcelas mensais" value={brl(parcelasMes)} icon={Receipt} status="neutral" hint="Compromisso fixo mensal com credores" />
