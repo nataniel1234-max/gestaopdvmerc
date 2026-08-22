@@ -143,19 +143,27 @@ function CaixaPage() {
         <CaixaControles />
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores (empresa)</Button>
+        <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa (empresa)</Button>
+        <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
+        <Button variant="outline" onClick={() => setDialog("credito")}><Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo</Button>
+        <Button variant="outline" onClick={() => setDialog("conta-bancaria")}><Wallet className="h-4 w-4 mr-1" /> Cadastrar conta bancária</Button>
+      </div>
+      <p className="text-xs text-muted-foreground -mt-4">
+        Créditos, despesas e pagamentos lançados aqui movimentam o caixa financeiro da empresa ou a conta bancária escolhida — nunca o caixa do PDV.
+      </p>
+
       {!caixa ? (
         <Card>
-          <CardContent className="py-10 text-center text-muted-foreground space-y-3">
-            <p>Nenhum caixa aberto. Abra o caixa para registrar movimentações.</p>
-            <Button variant="outline" onClick={() => setDialog("credito")}>
-              <Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo (em conta bancária)
-            </Button>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Nenhum caixa do PDV aberto. Os lançamentos financeiros da empresa acima continuam disponíveis.
           </CardContent>
         </Card>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard label="Saldo em dinheiro" value={brl(resumo.saldoDinheiro)} icon={Banknote} status="healthy" highlight
+            <KpiCard label="Saldo em dinheiro (PDV)" value={brl(resumo.saldoDinheiro)} icon={Banknote} status="healthy" highlight
               hint={`Abertura ${brl(caixa.valor_abertura)}`} />
             <KpiCard label="Entradas" value={brl(resumo.entradas)} icon={ArrowDownCircle} status="neutral" hint="Vendas à vista, recebimentos de fiado e suprimentos" />
             <KpiCard label="Saídas" value={brl(resumo.saidas)} icon={ArrowUpCircle} status="warning" hint="Sangrias, despesas e pagamentos" />
@@ -163,12 +171,6 @@ function CaixaPage() {
               hint={`${vendas.length} cupons · a prazo ${brl(resumo.aPrazo)} (fora do caixa)`} />
           </div>
 
-          <div className="hidden">
-            <Button onClick={() => setDialog("entrada")}><ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada de valores</Button>
-            <Button variant="outline" onClick={() => setDialog("despesa")}><Receipt className="h-4 w-4 mr-1" /> Saída para despesa</Button>
-            <Button variant="outline" onClick={() => setDialog("conta")}><FileText className="h-4 w-4 mr-1" /> Pagar conta / boleto</Button>
-            <Button variant="outline" onClick={() => setDialog("credito")}><Landmark className="h-4 w-4 mr-1" /> Lançar crédito / empréstimo</Button>
-          </div>
 
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Movimentação do caixa aberto</CardTitle></CardHeader>
