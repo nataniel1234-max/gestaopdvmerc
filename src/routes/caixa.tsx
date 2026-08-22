@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 import { DialogCredito } from "@/components/DialogCredito";
-import { movimentarCaixaEmpresa, obterCaixaEmpresa, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
+import { movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
+import { SelectContaDestino, DialogNovaConta, useContasFinanceiras } from "@/components/SelectContaDestino";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
@@ -43,7 +44,7 @@ type Linha = { id: string; quando: string; tipo: string; descricao: string; valo
 
 function CaixaPage() {
   const qc = useQueryClient();
-  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta" | "credito">(null);
+  const [dialog, setDialog] = useState<null | "entrada" | "despesa" | "conta" | "credito" | "conta-bancaria">(null);
 
   const { data: caixa } = useQuery({
     queryKey: ["caixa-aberto"],
@@ -129,6 +130,7 @@ function CaixaPage() {
     qc.invalidateQueries({ queryKey: ["dividas"] });
     qc.invalidateQueries({ queryKey: ["bal-bancos"] });
     qc.invalidateQueries({ queryKey: ["despesas"] });
+    qc.invalidateQueries({ queryKey: ["contas-financeiras"] });
   };
 
   return (
@@ -235,29 +237,28 @@ function CaixaPage() {
 
       <PosicaoFinanceira />
 
-      {caixa && (
-        <>
-          <DialogMovimento
-            tipo={dialog === "entrada" ? "suprimento" : "despesa"}
-            open={dialog === "entrada" || dialog === "despesa"}
-            onOpenChange={(v) => !v && setDialog(null)}
-            caixaId={caixa.id}
-            onDone={() => { setDialog(null); invalidar(); }}
-          />
-          <DialogPagarConta
-            open={dialog === "conta"}
-            onOpenChange={(v) => !v && setDialog(null)}
-            caixaId={caixa.id}
-            onDone={() => { setDialog(null); invalidar(); }}
-          />
-        </>
-      )}
+      <DialogMovimento
+        tipo={dialog === "entrada" ? "suprimento" : "despesa"}
+        open={dialog === "entrada" || dialog === "despesa"}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
+        onDone={() => { setDialog(null); invalidar(); }}
+      />
+      <DialogPagarConta
+        open={dialog === "conta"}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
+        onDone={() => { setDialog(null); invalidar(); }}
+      />
 
       <DialogCredito
         open={dialog === "credito"}
-        onOpenChange={(v) => !v && setDialog(null)}
-        caixaId={caixa?.id ?? null}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
         onDone={() => { setDialog(null); invalidar(); }}
+      />
+
+      <DialogNovaConta
+        open={dialog === "conta-bancaria"}
+        onOpenChange={(v) => { if (!v) setDialog(null); }}
+        onCreated={() => invalidar()}
       />
 
     </div>
@@ -272,6 +273,7 @@ function DialogMovimento({
   const [forma, setForma] = useState<Forma>("dinheiro");
   const [categoriaId, setCategoriaId] = useState<string>("none");
   const [centroId, setCentroId] = useState<string>("none");
+  const [contaId, setContaId] = useState<string>("");
   const { data: categorias = [] } = useCategoriasFinanceiras(tipo === "despesa" ? "despesa" : "receita");
   const { data: centros = [] } = useCentrosCusto();
 
@@ -279,8 +281,9 @@ function DialogMovimento({
     mutationFn: async () => {
       const v = Number(valor);
       if (!(v > 0)) throw new Error("Informe um valor válido");
-      // Movimenta apenas o caixa financeiro da empresa — não o caixa aberto no PDV.
-      if (forma === "dinheiro") await movimentarCaixaEmpresa(tipo === "suprimento" ? v : -v);
+      // Movimenta apenas a conta financeira da empresa — nunca o caixa aberto no PDV.
+      if (!contaId) throw new Error("Selecione a conta de origem/destino");
+      await movimentarConta(contaId, tipo === "suprimento" ? v : -v);
       if (tipo === "despesa") {
         const { error: e2 } = await supabase.from("despesas").insert({
           descricao: descricao || "Saída de caixa",
@@ -313,6 +316,12 @@ function DialogMovimento({
         </p>
         <div className="grid gap-3 py-2">
           <div><Label>Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} autoFocus /></div>
+          <SelectContaDestino
+            value={contaId}
+            onChange={setContaId}
+            enabled={open}
+            label={tipo === "suprimento" ? "Conta de destino" : "Conta de origem do pagamento"}
+          />
           <div>
             <Label>Forma</Label>
             <Select value={forma} onValueChange={(v) => setForma(v as Forma)}>
@@ -360,6 +369,7 @@ function DialogPagarConta({
 }: { open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
   const [contaId, setContaId] = useState<string>("");
   const [forma, setForma] = useState<string>("dinheiro");
+  const [contaFinId, setContaFinId] = useState<string>("");
   const { data: formas = [] } = useFormasPagamento();
 
   const { data: contas = [] } = useQuery({
@@ -383,10 +393,9 @@ function DialogPagarConta({
         .update({ status: "paga", data_pagamento: hoje, forma_pagamento: forma })
         .eq("id", conta.id);
       if (error) throw error;
-      // Pagamento em dinheiro sai do caixa da empresa (tesouraria), nunca do caixa do PDV.
-      if (forma.toLowerCase().includes("dinheiro")) {
-        await movimentarCaixaEmpresa(-Number(conta.valor));
-      }
+      // O pagamento sai da conta financeira escolhida (caixa da empresa ou banco), nunca do caixa do PDV.
+      if (!contaFinId) throw new Error("Selecione a conta de pagamento");
+      await movimentarConta(contaFinId, -Number(conta.valor));
     },
     onSuccess: () => { toast.success("Conta paga"); setContaId(""); onDone(); },
     onError: (e: any) => toast.error(e.message ?? "Erro ao pagar"),
@@ -412,12 +421,13 @@ function DialogPagarConta({
               </SelectContent>
             </Select>
           </div>
+          <SelectContaDestino value={contaFinId} onChange={setContaFinId} enabled={open} label="Pagar com (conta da empresa)" />
           <div>
             <Label>Forma de pagamento</Label>
             <Select value={forma} onValueChange={setForma}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro (sai do caixa da empresa)</SelectItem>
+                <SelectItem value="dinheiro">Dinheiro</SelectItem>
                 {formas.filter((f) => f.tipo_base !== "dinheiro").map((f) => (
                   <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>
                 ))}
