@@ -33,12 +33,14 @@ type ProdutoForm = {
   estoque_minimo: string;
   fornecedor_id: string | null;
   vendido_por_peso: boolean;
+  variacao: string;
+  variacoes: string[];
 };
 
 const empty: ProdutoForm = {
   nome: "", codigo_barras: "", categoria: "", unidade: "UN",
   preco_custo: "0", preco_venda: "0", estoque_atual: "0", estoque_minimo: "0", fornecedor_id: null,
-  vendido_por_peso: false,
+  vendido_por_peso: false, variacao: "", variacoes: [],
 };
 
 function ProdutosPage() {
