@@ -1552,9 +1552,11 @@ export type Database = {
           nome: string
           preco_custo: number
           preco_venda: number
+          produto_pai_id: string | null
           setor: Database["public"]["Enums"]["setor_produto"]
           unidade: string
           updated_at: string
+          variacao: string | null
           vendido_por_peso: boolean
         }
         Insert: {
@@ -1571,9 +1573,11 @@ export type Database = {
           nome: string
           preco_custo?: number
           preco_venda?: number
+          produto_pai_id?: string | null
           setor?: Database["public"]["Enums"]["setor_produto"]
           unidade?: string
           updated_at?: string
+          variacao?: string | null
           vendido_por_peso?: boolean
         }
         Update: {
@@ -1590,9 +1594,11 @@ export type Database = {
           nome?: string
           preco_custo?: number
           preco_venda?: number
+          produto_pai_id?: string | null
           setor?: Database["public"]["Enums"]["setor_produto"]
           unidade?: string
           updated_at?: string
+          variacao?: string | null
           vendido_por_peso?: boolean
         }
         Relationships: [
@@ -1608,6 +1614,13 @@ export type Database = {
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_produto_pai_id_fkey"
+            columns: ["produto_pai_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]
