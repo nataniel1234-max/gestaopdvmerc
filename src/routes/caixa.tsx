@@ -381,17 +381,24 @@ function DialogPagarConta({
   });
 
   const conta = contas.find((c) => c.id === contaId);
+  const { data: contasFin = [] } = useContasFinanceiras(open);
 
   const pagar = useMutation({
     mutationFn: async () => {
       if (!conta) throw new Error("Selecione uma conta");
-      const hoje = new Date().toISOString().slice(0, 10);
-      const { error } = await supabase.from("contas_pagar")
-        .update({ status: "paga", data_pagamento: hoje, forma_pagamento: forma })
-        .eq("id", conta.id);
-      if (error) throw error;
       // O pagamento sai da conta financeira escolhida (caixa da empresa ou banco), nunca do caixa do PDV.
       if (!contaFinId) throw new Error("Selecione a conta de pagamento");
+      const nomeConta = contasFin.find((c) => c.id === contaFinId)?.nome ?? "conta da empresa";
+      const hoje = new Date().toISOString().slice(0, 10);
+      const { error } = await supabase.from("contas_pagar")
+        .update({
+          status: "paga",
+          data_pagamento: hoje,
+          forma_pagamento: forma,
+          observacoes: `Pago por: ${nomeConta}`,
+        })
+        .eq("id", conta.id);
+      if (error) throw error;
       await movimentarConta(contaFinId, -Number(conta.valor));
     },
     onSuccess: () => { toast.success("Conta paga"); setContaId(""); onDone(); },
