@@ -21,7 +21,7 @@ import {
 import { useCategoriasFinanceiras, useCentrosCusto, useFormasPagamento } from "@/lib/predefinicoes";
 import { DialogCredito } from "@/components/DialogCredito";
 import { movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
-import { SelectContaDestino, DialogNovaConta } from "@/components/SelectContaDestino";
+import { SelectContaDestino, DialogNovaConta, useContasFinanceiras } from "@/components/SelectContaDestino";
 import type { Database } from "@/integrations/supabase/types";
 
 type Forma = Database["public"]["Enums"]["forma_pagamento"];
