@@ -62,6 +62,7 @@ const PLP_TIPOS = [
   { v: "outro", l: "Outra obrigação" },
 ];
 const BANCO_TIPOS = [
+  { v: "caixa", l: "Caixa / tesouraria" },
   { v: "banco", l: "Conta bancária" },
   { v: "aplicacao", l: "Aplicação financeira" },
   { v: "outros_creditos", l: "Outros créditos" },
@@ -135,9 +136,11 @@ function BalancoPage() {
   const { data: plp = [] } = useTable<any>("passivos_longo_prazo", "bal-plp");
   const { data: pl = [] } = useTable<any>("patrimonio_liquido", "bal-pl");
 
-  const totalBancos = bancos.filter((b: any) => b.ativo && b.tipo === "banco").reduce((s: number, b: any) => s + Number(b.saldo), 0);
-  const totalAplicacoes = bancos.filter((b: any) => b.ativo && b.tipo === "aplicacao").reduce((s: number, b: any) => s + Number(b.saldo), 0);
-  const totalOutrosCred = bancos.filter((b: any) => b.ativo && b.tipo === "outros_creditos").reduce((s: number, b: any) => s + Number(b.saldo), 0);
+  const somaTipo = (t: string) => bancos.filter((b: any) => b.ativo && b.tipo === t).reduce((s: number, b: any) => s + Number(b.saldo), 0);
+  const totalCaixaEmpresa = somaTipo("caixa");
+  const totalBancos = somaTipo("banco");
+  const totalAplicacoes = somaTipo("aplicacao");
+  const totalOutrosCred = somaTipo("outros_creditos");
 
   const totalImob = imob.filter((i: any) => i.ativo).reduce((s: number, i: any) => s + (Number(i.valor_atual) - Number(i.depreciacao_acumulada ?? 0)), 0);
   const totalIntang = intang.filter((i: any) => i.ativo).reduce((s: number, i: any) => s + Number(i.valor_atualizado), 0);
@@ -153,7 +156,7 @@ function BalancoPage() {
   const plRegistrado = capitalSocial + reservas + lucrosManuais + outrosPL;
 
   // ===== TOTAIS =====
-  const ativoCirculante = caixaAtual + totalBancos + totalAplicacoes + valorEstoque + fiadoReceber + contasReceberAtivo + totalOutrosCred;
+  const ativoCirculante = caixaAtual + totalCaixaEmpresa + totalBancos + totalAplicacoes + valorEstoque + fiadoReceber + contasReceberAtivo + totalOutrosCred;
   const ativoNaoCirculante = totalImob + totalIntang + totalInvest;
   const ativoTotal = ativoCirculante + ativoNaoCirculante;
 
@@ -238,7 +241,8 @@ function BalancoPage() {
                 </div>
                 <div className="divide-y divide-border">
                   <Section title="Ativo Circulante" />
-                  <Line icon={Wallet} label="Caixa (operacional)" value={caixaAtual} />
+                  <Line icon={Wallet} label="Caixa PDV (operacional)" value={caixaAtual} />
+                  <Line icon={Wallet} label="Caixa da empresa (tesouraria)" value={totalCaixaEmpresa} />
                   <Line icon={Banknote} label="Bancos" value={totalBancos} />
                   <Line icon={PiggyBank} label="Aplicações financeiras" value={totalAplicacoes} />
                   <Line icon={Boxes} label="Estoque (custo)" value={valorEstoque} hint={`PV: ${brl(valorEstoquePV)}`} />
