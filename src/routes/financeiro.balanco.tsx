@@ -62,6 +62,7 @@ const PLP_TIPOS = [
   { v: "outro", l: "Outra obrigação" },
 ];
 const BANCO_TIPOS = [
+  { v: "caixa", l: "Caixa / tesouraria" },
   { v: "banco", l: "Conta bancária" },
   { v: "aplicacao", l: "Aplicação financeira" },
   { v: "outros_creditos", l: "Outros créditos" },
