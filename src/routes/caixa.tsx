@@ -123,14 +123,9 @@ function CaixaPage() {
   }, [linhas, caixa]);
 
   const invalidar = () => {
-    qc.invalidateQueries({ queryKey: ["caixa-movs", caixa?.id] });
-    qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
-    qc.invalidateQueries({ queryKey: ["contas_pagar"] });
-    qc.invalidateQueries({ queryKey: ["contas-pagar-abertas"] });
-    qc.invalidateQueries({ queryKey: ["dividas"] });
-    qc.invalidateQueries({ queryKey: ["bal-bancos"] });
-    qc.invalidateQueries({ queryKey: ["despesas"] });
-    qc.invalidateQueries({ queryKey: ["contas-financeiras"] });
+    // Refresh amplo: caixa, contas financeiras, contas a pagar, dívidas,
+    // despesas e todos os painéis de balanço / inteligência financeira.
+    qc.invalidateQueries();
   };
 
   return (
