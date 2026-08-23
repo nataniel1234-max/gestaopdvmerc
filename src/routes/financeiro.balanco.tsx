@@ -155,7 +155,7 @@ function BalancoPage() {
   const plRegistrado = capitalSocial + reservas + lucrosManuais + outrosPL;
 
   // ===== TOTAIS =====
-  const ativoCirculante = caixaAtual + totalBancos + totalAplicacoes + valorEstoque + fiadoReceber + contasReceberAtivo + totalOutrosCred;
+  const ativoCirculante = caixaAtual + totalCaixaEmpresa + totalBancos + totalAplicacoes + valorEstoque + fiadoReceber + contasReceberAtivo + totalOutrosCred;
   const ativoNaoCirculante = totalImob + totalIntang + totalInvest;
   const ativoTotal = ativoCirculante + ativoNaoCirculante;
 
