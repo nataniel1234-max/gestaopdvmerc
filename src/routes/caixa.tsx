@@ -271,6 +271,7 @@ function DialogMovimento({
   const [contaId, setContaId] = useState<string>("");
   const { data: categorias = [] } = useCategoriasFinanceiras(tipo === "despesa" ? "despesa" : "receita");
   const { data: centros = [] } = useCentrosCusto();
+  const { data: contasFin = [] } = useContasFinanceiras(open);
 
   const salvar = useMutation({
     mutationFn: async () => {
@@ -278,6 +279,7 @@ function DialogMovimento({
       if (!(v > 0)) throw new Error("Informe um valor válido");
       // Movimenta apenas a conta financeira da empresa — nunca o caixa aberto no PDV.
       if (!contaId) throw new Error("Selecione a conta de origem/destino");
+      const nomeConta = contasFin.find((c) => c.id === contaId)?.nome ?? "conta da empresa";
       await movimentarConta(contaId, tipo === "suprimento" ? v : -v);
       if (tipo === "despesa") {
         const { error: e2 } = await supabase.from("despesas").insert({
