@@ -240,7 +240,8 @@ function BalancoPage() {
                 </div>
                 <div className="divide-y divide-border">
                   <Section title="Ativo Circulante" />
-                  <Line icon={Wallet} label="Caixa (operacional)" value={caixaAtual} />
+                  <Line icon={Wallet} label="Caixa PDV (operacional)" value={caixaAtual} />
+                  <Line icon={Wallet} label="Caixa da empresa (tesouraria)" value={totalCaixaEmpresa} />
                   <Line icon={Banknote} label="Bancos" value={totalBancos} />
                   <Line icon={PiggyBank} label="Aplicações financeiras" value={totalAplicacoes} />
                   <Line icon={Boxes} label="Estoque (custo)" value={valorEstoque} hint={`PV: ${brl(valorEstoquePV)}`} />
