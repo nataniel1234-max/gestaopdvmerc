@@ -67,7 +67,7 @@ export function DialogNovaConta({
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [instituicao, setInstituicao] = useState("");
-  const [tipo, setTipo] = useState("corrente");
+  const [tipo, setTipo] = useState("banco");
   const [saldo, setSaldo] = useState("0");
 
   const salvar = useMutation({
