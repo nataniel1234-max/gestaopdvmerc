@@ -104,10 +104,9 @@ export function DialogNovaConta({
               <Select value={tipo} onValueChange={setTipo}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="corrente">Conta corrente</SelectItem>
-                  <SelectItem value="poupanca">Poupança</SelectItem>
-                  <SelectItem value="digital">Conta digital</SelectItem>
-                  <SelectItem value="investimento">Investimento</SelectItem>
+                  <SelectItem value="banco">Conta bancária</SelectItem>
+                  <SelectItem value="aplicacao">Aplicação financeira</SelectItem>
+                  <SelectItem value="outros_creditos">Outros créditos</SelectItem>
                   <SelectItem value="caixa">Caixa / tesouraria</SelectItem>
                 </SelectContent>
               </Select>
