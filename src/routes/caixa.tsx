@@ -289,7 +289,7 @@ function DialogMovimento({
           forma_pagamento: forma,
           categoria_id: categoriaId === "none" ? null : categoriaId,
           centro_custo_id: centroId === "none" ? null : centroId,
-          observacoes: "Lançada no caixa da empresa",
+          observacoes: `Pago por: ${nomeConta}`,
         });
         if (e2) throw e2;
       }
