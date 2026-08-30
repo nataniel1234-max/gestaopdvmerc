@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,7 +106,7 @@ export function CaixaControles({ compact = false }: { compact?: boolean }) {
     onSuccess: () => {
       toast.success("Caixa aberto");
       setOpenAbrir(false); setOperador(""); setValorAbertura("0"); setObsAbertura("");
-      qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -123,7 +124,7 @@ export function CaixaControles({ compact = false }: { compact?: boolean }) {
     onSuccess: () => {
       toast.success("Movimentação registrada");
       setOpenMov(null); setMovValor(""); setMovDesc(""); setMovForma("dinheiro");
-      qc.invalidateQueries({ queryKey: ["caixa-movs", caixa?.id] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -150,8 +151,7 @@ export function CaixaControles({ compact = false }: { compact?: boolean }) {
       toast.success("Caixa fechado!");
       setOpenFechar(false); setValorFechado(""); setObsFechamento("");
       setGuiaCaixa(caixaFechado);
-      qc.invalidateQueries({ queryKey: ["caixa-aberto"] });
-      qc.invalidateQueries({ queryKey: ["caixas-fechados"] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,8 +76,7 @@ function SaidasPage() {
     onSuccess: () => {
       toast.success("Movimentação registrada");
       setProduto(""); setBusca(""); setQtd("1"); setObs("");
-      qc.invalidateQueries({ queryKey: ["movimentacoes"] });
-      qc.invalidateQueries({ queryKey: ["produtos"] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });

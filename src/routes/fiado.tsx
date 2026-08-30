@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,10 +97,7 @@ function FiadoPage() {
       toast.success("Pagamento registrado");
       setRecibo(data);
       setClienteSel(null); setValor(""); setObs("");
-      qc.invalidateQueries({ queryKey: ["clientes-fiado"] });
-      qc.invalidateQueries({ queryKey: ["pagamentos-fiado"] });
-      qc.invalidateQueries({ queryKey: ["clientes"] });
-      qc.invalidateQueries({ queryKey: ["fiado-extrato"] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });

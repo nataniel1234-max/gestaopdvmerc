@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect, useMemo, useDeferredValue } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -250,10 +251,7 @@ function PDVPage() {
       setCupomFinal(v);
       setCarrinho([]); setDesconto("0"); setClienteId(""); setObservacoes(""); setValorRecebido("");
       setPagOpen(false); setForma("dinheiro");
-      qc.invalidateQueries({ queryKey: ["produtos-pdv"] });
-      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
-      qc.invalidateQueries({ queryKey: ["caixa-vendas"] });
-      qc.invalidateQueries({ queryKey: ["caixa-movs"] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });

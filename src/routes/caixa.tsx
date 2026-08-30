@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,7 +126,7 @@ function CaixaPage() {
   const invalidar = () => {
     // Refresh amplo: caixa, contas financeiras, contas a pagar, dívidas,
     // despesas e todos os painéis de balanço / inteligência financeira.
-    qc.invalidateQueries();
+    invalidarTudo(qc);
   };
 
   return (

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +64,7 @@ function ClientesPage() {
         if (error) throw error;
       }
     },
-    onSuccess: () => { toast.success("Cliente salvo"); qc.invalidateQueries({ queryKey: ["clientes"] }); setOpen(false); setForm(empty); },
+    onSuccess: () => { toast.success("Cliente salvo"); invalidarTudo(qc); setOpen(false); setForm(empty); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -72,7 +73,7 @@ function ClientesPage() {
       const { error } = await supabase.from("clientes").update({ ativo: false }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Cliente desativado"); qc.invalidateQueries({ queryKey: ["clientes"] }); },
+    onSuccess: () => { toast.success("Cliente desativado"); invalidarTudo(qc); },
   });
 
   const editar = (c: typeof clientes[number]) => {
