@@ -101,12 +101,13 @@ function DashboardExecutivo() {
         supabase.from("vendas").select("total").eq("cancelada", false).gte("created_at", iniDiaAnt).lt("created_at", fimDiaAnt),
         supabase.from("vendas").select("total").eq("cancelada", false).gte("created_at", iniMes).lt("created_at", fimMes),
         supabase.from("vendas").select("total").eq("cancelada", false).gte("created_at", iniMesAnt).lt("created_at", fimMesAnt),
-        supabase.from("itens_venda").select("quantidade, preco_unitario, produto_id, vendas!inner(created_at, cancelada)").gte("vendas.created_at", iniMes).lt("vendas.created_at", fimMes).eq("vendas.cancelada", false),
-        supabase.from("itens_venda").select("quantidade, preco_unitario, produto_id, vendas!inner(created_at, cancelada)").gte("vendas.created_at", iniMesAnt).lt("vendas.created_at", fimMesAnt).eq("vendas.cancelada", false),
+        supabase.from("movimentacoes_estoque").select("quantidade, custo_unitario, produto_id").eq("tipo", "saida_venda").gte("created_at", iniMes).lt("created_at", fimMes),
+        supabase.from("movimentacoes_estoque").select("quantidade, custo_unitario, produto_id").eq("tipo", "saida_venda").gte("created_at", iniMesAnt).lt("created_at", fimMesAnt),
         supabase.from("produtos").select("id, preco_custo, estoque_atual, estoque_minimo").eq("ativo", true),
         supabase.from("clientes").select("saldo_devedor").gt("saldo_devedor", 0),
-        supabase.from("caixas").select("valor_abertura, total_dinheiro, total_sangrias, total_suprimentos, status").eq("status", "aberto"),
+        supabase.from("caixas").select("id, valor_abertura").eq("status", "aberto"),
       ]);
+
 
       const sum = (arr: { total: number }[] | null) => (arr ?? []).reduce((s, v) => s + Number(v.total ?? 0), 0);
 
