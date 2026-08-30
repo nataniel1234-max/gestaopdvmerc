@@ -78,8 +78,10 @@ function AppShell() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { user, loading, comercio, signOut } = useAuth();
+  useSyncGlobal();
   const isPdv = pathname.startsWith("/pdv");
   const isAuthRoute = pathname.startsWith("/auth");
+
 
   useEffect(() => {
     if (!loading && !user && !isAuthRoute) {
