@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { carregarResumoCaixa } from "@/lib/caixa-resumo";
 import { brl } from "@/lib/format";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
