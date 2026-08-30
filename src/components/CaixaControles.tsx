@@ -133,20 +133,24 @@ export function CaixaControles({ compact = false }: { compact?: boolean }) {
     mutationFn: async () => {
       if (!caixa) throw new Error("Sem caixa aberto");
       const informado = Number(valorFechado || 0);
-      const calculado = resumo.saldoDinheiro;
+      // Recalcula direto do banco (vendas vinculadas a este caixa_id),
+      // nunca do cache da tela — evita fechamento fora do total real de vendas.
+      const atual = await carregarResumoCaixa(caixa.id, Number(caixa.valor_abertura ?? 0));
+      const calculado = atual.saldoDinheiro;
       const dif = informado - calculado;
       const { data, error } = await supabase.from("caixas").update({
         status: "fechado",
         valor_fechamento_informado: informado, valor_fechamento_calculado: calculado, diferenca: dif,
-        total_dinheiro: resumo.dinheiro, total_pix: resumo.pix, total_debito: resumo.debito,
-        total_credito: resumo.credito, total_fiado: resumo.fiado,
-        total_sangrias: resumo.sangrias, total_suprimentos: resumo.suprimentos, total_despesas: resumo.despesas,
-        total_recebimentos_fiado: resumo.recebFiado, qtd_vendas: resumo.qtd,
+        total_dinheiro: atual.dinheiro, total_pix: atual.pix, total_debito: atual.debito,
+        total_credito: atual.credito, total_fiado: atual.fiado,
+        total_sangrias: atual.sangrias, total_suprimentos: atual.suprimentos, total_despesas: atual.despesas,
+        total_recebimentos_fiado: atual.recebFiado, qtd_vendas: atual.qtd,
         observacoes_fechamento: obsFechamento || null, fechado_em: new Date().toISOString(),
       }).eq("id", caixa.id).select().single();
       if (error) throw error;
       return data as CaixaCompleto;
     },
+
     onSuccess: (caixaFechado) => {
       toast.success("Caixa fechado!");
       setOpenFechar(false); setValorFechado(""); setObsFechamento("");
