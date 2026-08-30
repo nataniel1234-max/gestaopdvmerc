@@ -118,11 +118,15 @@ function DashboardExecutivo() {
       const fatMes = sum(vMes.data);
       const fatMesAnt = sum(vMesAnt.data);
 
-      // CMV estimado pelo custo atual dos produtos vendidos no mês
+      // CMV real: usa o custo gravado na baixa de estoque da venda (movimentacoes_estoque);
+      // se a movimentação não tiver custo, cai para o custo atual do produto.
       const custoMap = new Map<string, number>();
       (produtos.data ?? []).forEach((p) => custoMap.set(p.id, Number(p.preco_custo ?? 0)));
       const cmvCalc = (rows: any[] | null) =>
-        (rows ?? []).reduce((s, it) => s + Number(it.quantidade) * (custoMap.get(it.produto_id) ?? 0), 0);
+        (rows ?? []).reduce(
+          (s, m) => s + Number(m.quantidade) * Number(m.custo_unitario ?? custoMap.get(m.produto_id) ?? 0),
+          0,
+        );
       const cmvMes = cmvCalc(itensMes.data);
       const cmvMesAnt = cmvCalc(itensMesAnt.data);
       const lucroBrutoMes = fatMes - cmvMes;
@@ -134,9 +138,13 @@ function DashboardExecutivo() {
       const ticketDia = (vDia.data?.length ?? 0) > 0 ? fatDia / (vDia.data!.length) : 0;
       const ticketAnt = (vDiaAnt.data?.length ?? 0) > 0 ? fatDiaAnt / (vDiaAnt.data!.length) : 0;
 
-      const saldoCaixa = (caixas.data ?? []).reduce((s, c) => {
-        return s + Number(c.valor_abertura) + Number(c.total_dinheiro) + Number(c.total_suprimentos) - Number(c.total_sangrias);
-      }, 0);
+      // Saldo de caixa lido da MESMA fonte do fechamento (vendas/movimentações da sessão),
+      // e não das colunas totalizadoras, que só são preenchidas ao fechar o caixa.
+      const resumos = await Promise.all(
+        (caixas.data ?? []).map((c) => carregarResumoCaixa(c.id, Number(c.valor_abertura ?? 0))),
+      );
+      const saldoCaixa = resumos.reduce((s, r) => s + r.saldoDinheiro, 0);
+
 
       const baixoEstoque = (produtos.data ?? []).filter((p) => Number(p.estoque_atual) <= Number(p.estoque_minimo));
       const fiadoTotal = (fiadoQ.data ?? []).reduce((s, c) => s + Number(c.saldo_devedor ?? 0), 0);
