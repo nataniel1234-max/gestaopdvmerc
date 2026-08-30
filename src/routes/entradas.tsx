@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,12 +154,7 @@ function EntradasPage() {
     onSuccess: () => {
       toast.success(condicao === "avista" ? "Entrada lançada e baixada no financeiro" : "Entrada lançada e parcelas geradas em Contas a Pagar");
       setItens([]); setNumero(""); setObs("");
-      qc.invalidateQueries({ queryKey: ["notas-entrada"] });
-      qc.invalidateQueries({ queryKey: ["produtos"] });
-      qc.invalidateQueries({ queryKey: ["estoque-produtos"] });
-      qc.invalidateQueries({ queryKey: ["contas-pagar"] });
-      qc.invalidateQueries({ queryKey: ["bal-cp"] });
-      qc.invalidateQueries({ queryKey: ["caixa-movimentacoes"] });
+      invalidarTudo(qc);
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Store } from "lucide-react";
 import { aplicarTema, carregarTema } from "@/lib/tema";
 import { BannerAssinatura } from "@/components/BannerAssinatura";
+import { useSyncGlobal } from "@/lib/sync";
+
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -78,8 +80,10 @@ function AppShell() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { user, loading, comercio, signOut } = useAuth();
+  useSyncGlobal();
   const isPdv = pathname.startsWith("/pdv");
   const isAuthRoute = pathname.startsWith("/auth");
+
 
   useEffect(() => {
     if (!loading && !user && !isAuthRoute) {

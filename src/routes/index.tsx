@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { carregarResumoCaixa } from "@/lib/caixa-resumo";
 import { brl } from "@/lib/format";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
@@ -101,12 +102,13 @@ function DashboardExecutivo() {
         supabase.from("vendas").select("total").eq("cancelada", false).gte("created_at", iniDiaAnt).lt("created_at", fimDiaAnt),
         supabase.from("vendas").select("total").eq("cancelada", false).gte("created_at", iniMes).lt("created_at", fimMes),
         supabase.from("vendas").select("total").eq("cancelada", false).gte("created_at", iniMesAnt).lt("created_at", fimMesAnt),
-        supabase.from("itens_venda").select("quantidade, preco_unitario, produto_id, vendas!inner(created_at, cancelada)").gte("vendas.created_at", iniMes).lt("vendas.created_at", fimMes).eq("vendas.cancelada", false),
-        supabase.from("itens_venda").select("quantidade, preco_unitario, produto_id, vendas!inner(created_at, cancelada)").gte("vendas.created_at", iniMesAnt).lt("vendas.created_at", fimMesAnt).eq("vendas.cancelada", false),
+        supabase.from("movimentacoes_estoque").select("quantidade, custo_unitario, produto_id").eq("tipo", "saida_venda").gte("created_at", iniMes).lt("created_at", fimMes),
+        supabase.from("movimentacoes_estoque").select("quantidade, custo_unitario, produto_id").eq("tipo", "saida_venda").gte("created_at", iniMesAnt).lt("created_at", fimMesAnt),
         supabase.from("produtos").select("id, preco_custo, estoque_atual, estoque_minimo").eq("ativo", true),
         supabase.from("clientes").select("saldo_devedor").gt("saldo_devedor", 0),
-        supabase.from("caixas").select("valor_abertura, total_dinheiro, total_sangrias, total_suprimentos, status").eq("status", "aberto"),
+        supabase.from("caixas").select("id, valor_abertura").eq("status", "aberto"),
       ]);
+
 
       const sum = (arr: { total: number }[] | null) => (arr ?? []).reduce((s, v) => s + Number(v.total ?? 0), 0);
 
@@ -117,11 +119,15 @@ function DashboardExecutivo() {
       const fatMes = sum(vMes.data);
       const fatMesAnt = sum(vMesAnt.data);
 
-      // CMV estimado pelo custo atual dos produtos vendidos no mês
+      // CMV real: usa o custo gravado na baixa de estoque da venda (movimentacoes_estoque);
+      // se a movimentação não tiver custo, cai para o custo atual do produto.
       const custoMap = new Map<string, number>();
       (produtos.data ?? []).forEach((p) => custoMap.set(p.id, Number(p.preco_custo ?? 0)));
       const cmvCalc = (rows: any[] | null) =>
-        (rows ?? []).reduce((s, it) => s + Number(it.quantidade) * (custoMap.get(it.produto_id) ?? 0), 0);
+        (rows ?? []).reduce(
+          (s, m) => s + Number(m.quantidade) * Number(m.custo_unitario ?? custoMap.get(m.produto_id) ?? 0),
+          0,
+        );
       const cmvMes = cmvCalc(itensMes.data);
       const cmvMesAnt = cmvCalc(itensMesAnt.data);
       const lucroBrutoMes = fatMes - cmvMes;
@@ -133,9 +139,13 @@ function DashboardExecutivo() {
       const ticketDia = (vDia.data?.length ?? 0) > 0 ? fatDia / (vDia.data!.length) : 0;
       const ticketAnt = (vDiaAnt.data?.length ?? 0) > 0 ? fatDiaAnt / (vDiaAnt.data!.length) : 0;
 
-      const saldoCaixa = (caixas.data ?? []).reduce((s, c) => {
-        return s + Number(c.valor_abertura) + Number(c.total_dinheiro) + Number(c.total_suprimentos) - Number(c.total_sangrias);
-      }, 0);
+      // Saldo de caixa lido da MESMA fonte do fechamento (vendas/movimentações da sessão),
+      // e não das colunas totalizadoras, que só são preenchidas ao fechar o caixa.
+      const resumos = await Promise.all(
+        (caixas.data ?? []).map((c) => carregarResumoCaixa(c.id, Number(c.valor_abertura ?? 0))),
+      );
+      const saldoCaixa = resumos.reduce((s, r) => s + r.saldoDinheiro, 0);
+
 
       const baixoEstoque = (produtos.data ?? []).filter((p) => Number(p.estoque_atual) <= Number(p.estoque_minimo));
       const fiadoTotal = (fiadoQ.data ?? []).reduce((s, c) => s + Number(c.saldo_devedor ?? 0), 0);

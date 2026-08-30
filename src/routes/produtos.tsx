@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidarTudo } from "@/lib/sync";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,8 +126,7 @@ function ProdutosPage() {
     },
     onSuccess: (qtd) => {
       toast.success(qtd > 1 ? `${qtd} variações cadastradas` : "Produto salvo");
-      qc.invalidateQueries({ queryKey: ["produtos"] });
-      qc.invalidateQueries({ queryKey: ["produtos-busca"] });
+      invalidarTudo(qc);
       setOpen(false); setForm(empty);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -137,7 +137,7 @@ function ProdutosPage() {
       const { error } = await supabase.from("produtos").update({ ativo: false }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Produto desativado"); qc.invalidateQueries({ queryKey: ["produtos"] }); },
+    onSuccess: () => { toast.success("Produto desativado"); invalidarTudo(qc); },
   });
 
   const editar = (p: typeof produtos[number]) => {

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { carregarResumoCaixa } from "@/lib/caixa-resumo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,15 +88,19 @@ function useTable<T = any>(tabela: string, key: string) {
 
 function BalancoPage() {
   // ===== Operacionais (já existentes) =====
-  const { data: caixasAbertos = [] } = useQuery({
+  // Saldo dos caixas abertos calculado pela mesma fonte do fechamento
+  // (vendas/movimentações vinculadas à sessão), não pelas colunas totalizadoras.
+  const { data: caixaAtual = 0 } = useQuery({
     queryKey: ["bal-caixas"],
-    queryFn: async () =>
-      (await supabase.from("caixas").select("valor_abertura, total_dinheiro, total_suprimentos, total_sangrias, total_despesas").eq("status", "aberto")).data ?? [],
+    queryFn: async () => {
+      const { data } = await supabase.from("caixas").select("id, valor_abertura").eq("status", "aberto");
+      const resumos = await Promise.all(
+        (data ?? []).map((c) => carregarResumoCaixa(c.id, Number(c.valor_abertura ?? 0))),
+      );
+      return resumos.reduce((s, r) => s + r.saldoDinheiro, 0);
+    },
   });
-  const caixaAtual = caixasAbertos.reduce(
-    (s, c) => s + Number(c.valor_abertura ?? 0) + Number(c.total_dinheiro ?? 0) + Number(c.total_suprimentos ?? 0) - Number(c.total_sangrias ?? 0) - Number(c.total_despesas ?? 0),
-    0,
-  );
+
 
   const { data: produtos = [] } = useQuery({
     queryKey: ["bal-produtos"],
