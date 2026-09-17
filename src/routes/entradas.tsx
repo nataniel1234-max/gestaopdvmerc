@@ -17,6 +17,8 @@ import { aplicarMovimentacao } from "@/lib/estoque";
 import { useFormasPagamento, useCategoriasFinanceiras } from "@/lib/predefinicoes";
 import { getCaixaAberto } from "@/lib/caixa";
 import { Badge } from "@/components/ui/badge";
+import { SelectContaDestino } from "@/components/SelectContaDestino";
+import { movimentarConta, NOME_CAIXA_EMPRESA } from "@/lib/caixa-empresa";
 
 export const Route = createFileRoute("/entradas")({
   head: () => ({ meta: [{ title: "Entrada de Mercadoria — Mercadinho" }] }),
@@ -41,6 +43,7 @@ function EntradasPage() {
   const [itens, setItens] = useState<Item[]>([]);
   const [condicao, setCondicao] = useState<"avista" | "prazo">("avista");
   const [formaPagamento, setFormaPagamento] = useState("Dinheiro");
+  const [contaId, setContaId] = useState("");
   const [categoria_id, setCategoria] = useState("");
   const [parcelas, setParcelas] = useState("1");
   const [primeiroVenc, setPrimeiroVenc] = useState(addDias(new Date().toISOString().slice(0, 10), 30));
@@ -81,6 +84,7 @@ function EntradasPage() {
   const salvar = useMutation({
     mutationFn: async () => {
       if (itens.length === 0) throw new Error("Adicione ao menos 1 item");
+      if (condicao === "avista" && !contaId) throw new Error("Selecione a conta usada no pagamento");
       const { data: nota, error } = await supabase.from("notas_entrada").insert({
         numero_nota: numero_nota || null,
         fornecedor_id: fornecedor_id || null,
@@ -104,7 +108,7 @@ function EntradasPage() {
       const descBase = `Compra${numero_nota ? ` NF ${numero_nota}` : ""}${fornecedor_id ? "" : " (sem fornecedor)"}`;
 
       if (condicao === "avista") {
-        // Compra à vista: quita imediatamente e cruza com o caixa quando for dinheiro
+        // Compra à vista: quita imediatamente e debita a conta financeira escolhida.
         const { error: eCP } = await supabase.from("contas_pagar").insert({
           descricao: descBase,
           fornecedor_id: fornecedor_id || null,
@@ -118,7 +122,17 @@ function EntradasPage() {
         });
         if (eCP) throw eCP;
 
-        if (formaPagamento.toLowerCase().includes("dinheiro")) {
+        await movimentarConta(contaId, -total);
+
+        const { data: conta, error: eConta } = await supabase
+          .from("contas_bancarias")
+          .select("nome")
+          .eq("id", contaId)
+          .single();
+        if (eConta) throw eConta;
+
+        const pagamentoEmDinheiro = formaPagamento.toLowerCase().includes("dinheiro");
+        if (conta.nome === NOME_CAIXA_EMPRESA && pagamentoEmDinheiro) {
           const caixa = await getCaixaAberto();
           if (!caixa) throw new Error("Compra à vista em dinheiro exige caixa aberto. Abra o caixa no PDV ou escolha outra forma.");
           const { error: eMov } = await supabase.from("movimentacoes_caixa").insert({
@@ -269,6 +283,16 @@ function EntradasPage() {
                   </Select>
                 </div>
               </div>
+              {condicao === "avista" && (
+                <div className="max-w-md">
+                  <SelectContaDestino
+                    value={contaId}
+                    onChange={setContaId}
+                    enabled={condicao === "avista"}
+                    label="Pagar com"
+                  />
+                </div>
+              )}
               {condicao === "prazo" && (
                 <div className="grid md:grid-cols-2 gap-3">
                   <div><Label>Parcelas</Label><Input type="number" min="1" value={parcelas} onChange={(e) => setParcelas(e.target.value)} /></div>
@@ -278,7 +302,7 @@ function EntradasPage() {
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <CalendarClock className="h-3 w-3" />
                 {condicao === "avista"
-                  ? "Gera um lançamento já quitado em Contas a Pagar; em dinheiro também sai do caixa aberto."
+                   ? "Gera um lançamento quitado e debita a conta selecionada; dinheiro no Caixa da empresa também cruza com o caixa do PDV."
                   : `Gera ${Math.max(1, Number(parcelas) || 1)} parcela(s) em Contas a Pagar com intervalo de 30 dias.`}
               </p>
             </div>
