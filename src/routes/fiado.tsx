@@ -79,7 +79,7 @@ function FiadoPage() {
 
       const { data: contasAbertas, error: eContas } = await supabase
         .from("contas_receber")
-        .select("id, valor")
+        .select("id, venda_id, descricao, categoria_id, valor, data_vencimento, observacoes")
         .eq("cliente_id", clienteSel.id)
         .not("venda_id", "is", null)
         .in("status", ["pendente", "atrasada"])
@@ -101,10 +101,24 @@ function FiadoPage() {
           if (eBaixa) throw eBaixa;
           restante -= saldoConta;
         } else {
+          const valorParcial = restante;
           const { error: eParcial } = await supabase.from("contas_receber")
-            .update({ valor: Number((saldoConta - restante).toFixed(2)) })
+            .update({ valor: Number((saldoConta - valorParcial).toFixed(2)) })
             .eq("id", conta.id);
           if (eParcial) throw eParcial;
+
+          const { error: eHistoricoParcial } = await supabase.from("contas_receber").insert({
+            descricao: `${conta.descricao} — recebimento parcial`,
+            cliente_id: clienteSel.id,
+            categoria_id: conta.categoria_id,
+            valor: valorParcial,
+            data_vencimento: conta.data_vencimento,
+            data_recebimento: hoje,
+            status: "recebida",
+            forma_recebimento: forma,
+            observacoes: conta.observacoes,
+          });
+          if (eHistoricoParcial) throw eHistoricoParcial;
           restante = 0;
         }
       }
