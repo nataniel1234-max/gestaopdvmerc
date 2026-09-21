@@ -117,7 +117,10 @@ function BalancoPage() {
 
   const { data: cr = [] } = useQuery({
     queryKey: ["bal-cr"],
-    queryFn: async () => (await supabase.from("contas_receber").select("valor, status").not("status", "in", "(recebida,cancelada)")).data ?? [],
+    queryFn: async () => (await supabase.from("contas_receber")
+      .select("valor, status")
+      .is("venda_id", null)
+      .not("status", "in", "(recebida,cancelada)")).data ?? [],
   });
   const contasReceberAtivo = cr.reduce((s, c) => s + Number(c.valor), 0);
 

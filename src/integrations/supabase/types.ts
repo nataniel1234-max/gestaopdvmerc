@@ -785,6 +785,7 @@ export type Database = {
           status: Database["public"]["Enums"]["status_conta_receber"]
           updated_at: string
           valor: number
+          venda_id: string | null
         }
         Insert: {
           categoria_id?: string | null
@@ -800,6 +801,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["status_conta_receber"]
           updated_at?: string
           valor: number
+          venda_id?: string | null
         }
         Update: {
           categoria_id?: string | null
@@ -815,6 +817,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["status_conta_receber"]
           updated_at?: string
           valor?: number
+          venda_id?: string | null
         }
         Relationships: [
           {
@@ -836,6 +839,13 @@ export type Database = {
             columns: ["comercio_id"]
             isOneToOne: false
             referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
             referencedColumns: ["id"]
           },
         ]

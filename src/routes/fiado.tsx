@@ -77,6 +77,52 @@ function FiadoPage() {
       const { error: e2 } = await supabase.from("clientes").update({ saldo_devedor: novoSaldo }).eq("id", clienteSel.id);
       if (e2) throw e2;
 
+      const { data: contasAbertas, error: eContas } = await supabase
+        .from("contas_receber")
+        .select("id, venda_id, descricao, categoria_id, valor, data_vencimento, observacoes")
+        .eq("cliente_id", clienteSel.id)
+        .not("venda_id", "is", null)
+        .in("status", ["pendente", "atrasada"])
+        .order("data_vencimento", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (eContas) throw eContas;
+
+      let restante = v;
+      const hoje = new Date().toISOString().slice(0, 10);
+      for (const conta of contasAbertas ?? []) {
+        if (restante <= 0) break;
+        const saldoConta = Number(conta.valor);
+        if (restante >= saldoConta) {
+          const { error: eBaixa } = await supabase.from("contas_receber").update({
+            status: "recebida",
+            data_recebimento: hoje,
+            forma_recebimento: forma,
+          }).eq("id", conta.id);
+          if (eBaixa) throw eBaixa;
+          restante -= saldoConta;
+        } else {
+          const valorParcial = restante;
+          const { error: eParcial } = await supabase.from("contas_receber")
+            .update({ valor: Number((saldoConta - valorParcial).toFixed(2)) })
+            .eq("id", conta.id);
+          if (eParcial) throw eParcial;
+
+          const { error: eHistoricoParcial } = await supabase.from("contas_receber").insert({
+            descricao: `${conta.descricao} — recebimento parcial`,
+            cliente_id: clienteSel.id,
+            categoria_id: conta.categoria_id,
+            valor: valorParcial,
+            data_vencimento: conta.data_vencimento,
+            data_recebimento: hoje,
+            status: "recebida",
+            forma_recebimento: forma,
+            observacoes: conta.observacoes,
+          });
+          if (eHistoricoParcial) throw eHistoricoParcial;
+          restante = 0;
+        }
+      }
+
       await supabase.from("movimentacoes_caixa").insert({
         caixa_id, tipo: "recebimento_fiado", forma_pagamento: forma, valor: v,
         descricao: `Recebimento fiado — ${clienteSel.nome}`, referencia_id: pag?.id ?? null,

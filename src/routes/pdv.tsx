@@ -229,9 +229,31 @@ function PDVPage() {
       }
 
       if (forma === "fiado" && clienteSel) {
-        await supabase.from("clientes")
+        const { error: eCliente } = await supabase.from("clientes")
           .update({ saldo_devedor: Number(clienteSel.saldo_devedor) + total })
           .eq("id", clienteSel.id);
+        if (eCliente) throw eCliente;
+
+        const vencimento = new Date();
+        vencimento.setDate(vencimento.getDate() + 30);
+        const { data: categoriaFiado } = await supabase
+          .from("categorias_financeiras")
+          .select("id")
+          .eq("tipo", "receita")
+          .eq("nome", "Vendas fiado")
+          .maybeSingle();
+        const { error: eReceber } = await supabase.from("contas_receber").insert({
+          descricao: `Venda fiada #${venda.numero_cupom}`,
+          cliente_id: clienteSel.id,
+          categoria_id: categoriaFiado?.id ?? null,
+          venda_id: venda.id,
+          valor: total,
+          data_vencimento: vencimento.toISOString().slice(0, 10),
+          status: "pendente",
+          forma_recebimento: "fiado",
+          observacoes: observacoes || null,
+        });
+        if (eReceber) throw eReceber;
       }
 
       // Venda fiado não entra no caixa: só vira caixa no recebimento do fiado
