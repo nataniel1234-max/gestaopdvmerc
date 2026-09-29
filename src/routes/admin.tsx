@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -174,6 +174,12 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
   const carenciaAtual = a?.dias_carencia ?? 15;
   const vencAtual = a?.proximo_vencimento ?? "";
 
+  useEffect(() => {
+    setValor(String(valorAtual));
+    setCarencia(String(carenciaAtual));
+    setVenc(vencAtual);
+  }, [comercioId, valorAtual, carenciaAtual, vencAtual]);
+
   const salvar = async () => {
     if (!comercioId) return;
     const payload: any = {
@@ -239,9 +245,9 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
             {a ? (
               <>
                 <div className="grid sm:grid-cols-3 gap-3">
-                  <div><Label>Mensalidade (R$)</Label><Input type="number" step="0.01" defaultValue={valorAtual} onChange={(e) => setValor(e.target.value)} /></div>
-                  <div><Label>Carência (dias)</Label><Input type="number" defaultValue={carenciaAtual} onChange={(e) => setCarencia(e.target.value)} /></div>
-                  <div><Label>Próx. vencimento</Label><Input type="date" defaultValue={vencAtual} onChange={(e) => setVenc(e.target.value)} /></div>
+                  <div><Label>Mensalidade (R$)</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
+                  <div><Label>Carência (dias)</Label><Input type="number" value={carencia} onChange={(e) => setCarencia(e.target.value)} /></div>
+                  <div><Label>Próx. vencimento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={salvar}>Salvar alterações</Button>

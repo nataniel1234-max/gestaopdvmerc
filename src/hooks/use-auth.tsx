@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (ch) ch.onmessage = atualizar;
     window.addEventListener("focus", atualizar);
     document.addEventListener("visibilitychange", atualizar);
-    const timer = window.setInterval(atualizar, 30000);
+    const timer = window.setInterval(atualizar, 60000);
     return () => {
       ch?.close();
       window.removeEventListener("focus", atualizar);
