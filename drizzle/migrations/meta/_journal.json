@@ -8,6 +8,13 @@
       "when": 1789996744046,
       "tag": "0000_link_contas_receber_to_vendas",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790724377900,
+      "tag": "0001_permitir_operadores_consultar_status_assinatura",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +12,19 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, ShieldCheck } from "lucide-react";
+import { invalidarTudo } from "@/lib/sync";
 
 const ADMIN_EMAIL = "natanmtf@gmail.com";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Controle de PDVs" }] }),
+  head: () => ({ meta: [
+    { title: "Controle de PDVs e assinaturas — Mercadinho" },
+    { name: "description", content: "Administre as assinaturas, pagamentos e acessos dos comércios no Mercadinho." },
+    { property: "og:title", content: "Controle de PDVs e assinaturas — Mercadinho" },
+    { property: "og:description", content: "Administre as assinaturas, pagamentos e acessos dos comércios no Mercadinho." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
@@ -146,6 +154,8 @@ function AdminPage() {
 
 function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string | null; onClose: () => void; onChange: () => void }) {
   const open = !!comercioId;
+  const qc = useQueryClient();
+  const [registrando, setRegistrando] = useState(false);
 
   const { data: detalhe } = useQuery({
     queryKey: ["admin-detalhe", comercioId],
@@ -171,6 +181,12 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
   const carenciaAtual = a?.dias_carencia ?? 15;
   const vencAtual = a?.proximo_vencimento ?? "";
 
+  useEffect(() => {
+    setValor(String(valorAtual));
+    setCarencia(String(carenciaAtual));
+    setVenc(vencAtual);
+  }, [comercioId, valorAtual, carenciaAtual, vencAtual]);
+
   const salvar = async () => {
     if (!comercioId) return;
     const payload: any = {
@@ -181,22 +197,32 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
     const { error } = await supabase.from("assinaturas").update(payload).eq("comercio_id", comercioId);
     if (error) return toast.error(error.message);
     toast.success("Assinatura atualizada");
+    await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
     onChange();
   };
 
   const registrarPagamento = async () => {
-    if (!comercioId || !a) return;
-    const hoje = new Date().toISOString().slice(0, 10);
-    const proxData = new Date(a.proximo_vencimento + "T00:00:00");
-    proxData.setMonth(proxData.getMonth() + 1);
-    const prox = proxData.toISOString().slice(0, 10);
-    const { error } = await supabase.from("pagamentos_assinatura").insert({
-      comercio_id: comercioId, valor: Number(a.valor_mensal),
-      data_pagamento: hoje, referente_a: a.proximo_vencimento, proximo_vencimento: prox, forma: "manual",
-    } as never);
-    if (error) return toast.error(error.message);
-    toast.success("Pagamento registrado");
-    onChange();
+    if (!comercioId || !a || registrando) return;
+    setRegistrando(true);
+    try {
+      const agora = new Date();
+      const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+      const base = a.proximo_vencimento > hoje ? a.proximo_vencimento : hoje;
+      const [ano, mes, dia] = base.split("-").map(Number);
+      const proxData = new Date(ano, mes, Math.min(dia, new Date(ano, mes + 1, 0).getDate()));
+      const prox = `${proxData.getFullYear()}-${String(proxData.getMonth() + 1).padStart(2, "0")}-${String(proxData.getDate()).padStart(2, "0")}`;
+      const { error } = await supabase.from("pagamentos_assinatura").insert({
+        comercio_id: comercioId, valor: Number(a.valor_mensal),
+        data_pagamento: hoje, referente_a: a.proximo_vencimento, proximo_vencimento: prox, forma: "manual",
+      } as never);
+      if (error) return toast.error(error.message);
+      await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
+      invalidarTudo(qc);
+      onChange();
+      toast.success("Pagamento confirmado. Assinatura liberada.");
+    } finally {
+      setRegistrando(false);
+    }
   };
 
   const toggleAtiva = async () => {
@@ -204,6 +230,8 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
     const { error } = await supabase.from("assinaturas").update({ ativa: !a.ativa }).eq("comercio_id", comercioId);
     if (error) return toast.error(error.message);
     toast.success(a.ativa ? "Bloqueada" : "Reativada");
+    await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
+    invalidarTudo(qc);
     onChange();
   };
 
@@ -224,13 +252,13 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
             {a ? (
               <>
                 <div className="grid sm:grid-cols-3 gap-3">
-                  <div><Label>Mensalidade (R$)</Label><Input type="number" step="0.01" defaultValue={valorAtual} onChange={(e) => setValor(e.target.value)} /></div>
-                  <div><Label>Carência (dias)</Label><Input type="number" defaultValue={carenciaAtual} onChange={(e) => setCarencia(e.target.value)} /></div>
-                  <div><Label>Próx. vencimento</Label><Input type="date" defaultValue={vencAtual} onChange={(e) => setVenc(e.target.value)} /></div>
+                  <div><Label>Mensalidade (R$)</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
+                  <div><Label>Carência (dias)</Label><Input type="number" value={carencia} onChange={(e) => setCarencia(e.target.value)} /></div>
+                  <div><Label>Próx. vencimento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={salvar}>Salvar alterações</Button>
-                  <Button variant="secondary" onClick={registrarPagamento}>Registrar pagamento</Button>
+                  <Button variant="secondary" disabled={registrando} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
                   <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Reativar"}</Button>
                 </div>
               </>

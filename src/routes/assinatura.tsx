@@ -7,7 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/assinatura")({
-  head: () => ({ meta: [{ title: "Minha Assinatura" }] }),
+  head: () => ({ meta: [
+    { title: "Minha Assinatura — Mercadinho" },
+    { name: "description", content: "Consulte o status, vencimento e histórico de pagamentos da sua assinatura do Mercadinho." },
+    { property: "og:title", content: "Minha Assinatura — Mercadinho" },
+    { property: "og:description", content: "Consulte o status, vencimento e histórico de pagamentos da sua assinatura do Mercadinho." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AssinaturaPage,
 });
 
