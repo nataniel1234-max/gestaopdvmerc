@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (c) {
       setComercio({ id: c.id, nome: c.nome });
       const { data: a } = await supabase.from("assinaturas").select("*").eq("comercio_id", c.id).maybeSingle();
-      if (a) setAssinatura(calcStatus(a));
+       setAssinatura(a ? calcStatus(a) : null);
     } else {
       setComercio(null); setAssinatura(null);
     }
@@ -121,6 +121,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener("beforeunload", onUnload);
     return () => { sub.subscription.unsubscribe(); window.removeEventListener("beforeunload", onUnload); };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const atualizar = () => { if (document.visibilityState === "visible") void loadDados(user.id); };
+    const ch = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("gestao-sync") : null;
+    if (ch) ch.onmessage = atualizar;
+    window.addEventListener("focus", atualizar);
+    document.addEventListener("visibilitychange", atualizar);
+    const timer = window.setInterval(atualizar, 30000);
+    return () => {
+      ch?.close();
+      window.removeEventListener("focus", atualizar);
+      document.removeEventListener("visibilitychange", atualizar);
+      window.clearInterval(timer);
+    };
+  }, [user?.id]);
 
   const signOut = async () => { await encerrarSessao(); await supabase.auth.signOut(); };
   const refreshComercio = async () => { await loadDados(user?.id); };
