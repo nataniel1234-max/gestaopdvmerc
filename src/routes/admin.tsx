@@ -17,7 +17,14 @@ import { invalidarTudo } from "@/lib/sync";
 const ADMIN_EMAIL = "natanmtf@gmail.com";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Controle de PDVs" }] }),
+  head: () => ({ meta: [
+    { title: "Controle de PDVs e assinaturas — Mercadinho" },
+    { name: "description", content: "Administre as assinaturas, pagamentos e acessos dos comércios no Mercadinho." },
+    { property: "og:title", content: "Controle de PDVs e assinaturas — Mercadinho" },
+    { property: "og:description", content: "Administre as assinaturas, pagamentos e acessos dos comércios no Mercadinho." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
