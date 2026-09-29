@@ -1805,6 +1805,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aplicar_movimentacao_estoque: {
+        Args: {
+          p_custo_unitario?: number
+          p_motivo: Database["public"]["Enums"]["movimentacao_motivo"]
+          p_observacoes?: string
+          p_produto_id: string
+          p_quantidade: number
+          p_referencia_id?: string
+          p_tipo: Database["public"]["Enums"]["movimentacao_tipo"]
+        }
+        Returns: {
+          estoque_anterior: number
+          estoque_novo: number
+        }[]
+      }
       caixa_aberto: { Args: never; Returns: string }
       comercio_status: { Args: { _comercio_id: string }; Returns: string }
       current_user_comercio: { Args: never; Returns: string }

@@ -4,7 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 type MovTipo = Database["public"]["Enums"]["movimentacao_tipo"];
 type MovMotivo = Database["public"]["Enums"]["movimentacao_motivo"];
 
-/** Aplica uma movimentação de estoque e atualiza o produto. */
+/** Aplica uma movimentação de estoque e atualiza o produto atomicamente. */
 export async function aplicarMovimentacao(args: {
   produto_id: string;
   tipo: MovTipo;
@@ -14,36 +14,21 @@ export async function aplicarMovimentacao(args: {
   referencia_id?: string | null;
   observacoes?: string | null;
 }) {
-  const { data: produto, error: e1 } = await supabase
-    .from("produtos")
-    .select("id, estoque_atual, preco_custo")
-    .eq("id", args.produto_id)
-    .single();
-  if (e1 || !produto) throw e1 ?? new Error("Produto não encontrado");
-
-  const estoque_anterior = Number(produto.estoque_atual);
-  const sinal = args.tipo === "entrada_compra" ? 1 : -1;
-  const estoque_novo = estoque_anterior + sinal * args.quantidade;
-
-  const { error: e2 } = await supabase.from("movimentacoes_estoque").insert({
-    produto_id: args.produto_id,
-    tipo: args.tipo,
-    motivo: args.motivo,
-    quantidade: args.quantidade,
-    estoque_anterior,
-    estoque_novo,
-    custo_unitario: args.custo_unitario ?? null,
-    referencia_id: args.referencia_id ?? null,
-    observacoes: args.observacoes ?? null,
+  const { data, error } = await supabase.rpc("aplicar_movimentacao_estoque", {
+    p_produto_id: args.produto_id,
+    p_tipo: args.tipo,
+    p_motivo: args.motivo,
+    p_quantidade: args.quantidade,
+    p_custo_unitario: args.custo_unitario ?? undefined,
+    p_referencia_id: args.referencia_id ?? undefined,
+    p_observacoes: args.observacoes ?? undefined,
   });
-  if (e2) throw e2;
+  if (error) throw error;
+  const resultado = data?.[0];
+  if (!resultado) throw new Error("Movimentação de estoque não retornou saldo");
 
-  const update: Database["public"]["Tables"]["produtos"]["Update"] = { estoque_atual: estoque_novo };
-  if (args.tipo === "entrada_compra" && args.custo_unitario != null) {
-    update.preco_custo = args.custo_unitario;
-  }
-  const { error: e3 } = await supabase.from("produtos").update(update).eq("id", args.produto_id);
-  if (e3) throw e3;
-
-  return { estoque_anterior, estoque_novo };
+  return {
+    estoque_anterior: Number(resultado.estoque_anterior),
+    estoque_novo: Number(resultado.estoque_novo),
+  };
 }

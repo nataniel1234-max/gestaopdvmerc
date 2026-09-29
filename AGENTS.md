@@ -1,0 +1,1 @@
+Use `public.aplicar_movimentacao_estoque` through `src/lib/estoque.ts` for stock changes; its row lock and single database transaction keep product balances and movement history consistent under concurrent writes.
