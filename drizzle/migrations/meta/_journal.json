@@ -15,6 +15,13 @@
       "when": 1790724377900,
       "tag": "0001_permitir_operadores_consultar_status_assinatura",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790724597548,
+      "tag": "0002_aplicar_movimentacao_estoque_atomica",
+      "breakpoints": true
     }
   ]
 }
