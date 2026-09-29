@@ -19,9 +19,9 @@ export async function aplicarMovimentacao(args: {
     p_tipo: args.tipo,
     p_motivo: args.motivo,
     p_quantidade: args.quantidade,
-    p_custo_unitario: args.custo_unitario ?? null,
-    p_referencia_id: args.referencia_id ?? null,
-    p_observacoes: args.observacoes ?? null,
+    p_custo_unitario: args.custo_unitario ?? undefined,
+    p_referencia_id: args.referencia_id ?? undefined,
+    p_observacoes: args.observacoes ?? undefined,
   });
   if (error) throw error;
   const resultado = data?.[0];
