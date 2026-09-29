@@ -1,0 +1,1 @@
+CREATE POLICY "membros consultam status assinatura" ON public.assinaturas FOR SELECT TO authenticated USING (public.is_member_of(auth.uid(), comercio_id));
