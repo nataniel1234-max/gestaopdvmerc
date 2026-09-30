@@ -1,1 +1,2 @@
 Use `public.aplicar_movimentacao_estoque` through `src/lib/estoque.ts` for stock changes; its row lock and single database transaction keep product balances and movement history consistent under concurrent writes.
+Grant superadmin read access to commerce identities and subscription records through RLS, while keeping writes role-restricted; the subscription panel must identify the exact tenant before confirming a payment.

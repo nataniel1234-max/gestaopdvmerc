@@ -53,7 +53,7 @@ function AdminPage() {
   const [comercioId, setComercioId] = useState<string | null>(null);
   const qc = useQueryClient();
 
-  const { data: comercios } = useQuery({
+  const { data: comercios, error: listError } = useQuery({
     queryKey: ["admin-comercios"],
     queryFn: async () => {
       const [{ data: cs, error: csError }, { data: as, error: asError }, { data: rs, error: rsError }, { data: ps }] = await Promise.all([
@@ -123,6 +123,7 @@ function AdminPage() {
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Vencidas</CardTitle></CardHeader><CardContent className="text-2xl font-bold text-destructive">{totais.vencidas}</CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">MRR</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{fmt(totais.mrr)}</CardContent></Card>
       </div>
+      {listError && <p className="text-sm text-destructive">Não foi possível carregar todos os comércios. Tente novamente antes de confirmar pagamentos.</p>}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2">
@@ -166,7 +167,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
   const qc = useQueryClient();
   const [registrando, setRegistrando] = useState(false);
 
-  const { data: detalhe } = useQuery({
+  const { data: detalhe, error: detalheError } = useQuery({
     queryKey: ["admin-detalhe", comercioId],
     enabled: open,
     queryFn: async () => {
@@ -260,6 +261,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{detalhe?.comercio?.nome ?? "Comércio"}</DialogTitle></DialogHeader>
+        {detalheError && <p className="text-sm text-destructive">Não foi possível conferir os dados deste comércio. Feche e tente novamente.</p>}
 
         <Tabs defaultValue="assinatura">
           <TabsList className="grid grid-cols-4 w-full">
@@ -279,7 +281,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={salvar}>Salvar alterações</Button>
-                  <Button variant="secondary" disabled={registrando} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
+                  <Button variant="secondary" disabled={registrando || !!detalheError} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
                   <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Reativar"}</Button>
                 </div>
                 <p className="text-sm text-muted-foreground">Confirmação para: {detalhe?.comercio?.nome}. Vencimento atual: {fdate(a.proximo_vencimento)}.</p>
