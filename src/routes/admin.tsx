@@ -251,7 +251,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
     const { data: atualizada, error } = await supabase.from("assinaturas").update({ ativa: !a.ativa }).eq("comercio_id", comercioId).select("ativa").maybeSingle();
     if (error) return toast.error(error.message);
     if (!atualizada || atualizada.ativa === a.ativa) return toast.error("Não foi possível alterar a liberação deste cadastro.");
-    toast.success(a.ativa ? "Bloqueada" : "Reativada");
+    toast.success(a.ativa ? "Bloqueada" : "Desbloqueada. O vencimento não foi alterado.");
     await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
     invalidarTudo(qc);
     onChange();
@@ -282,7 +282,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={salvar}>Salvar alterações</Button>
                   <Button variant="secondary" disabled={registrando || !!detalheError} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
-                  <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Reativar"}</Button>
+                  <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Desbloquear (sem renovar)"}</Button>
                 </div>
                 <p className="text-sm text-muted-foreground">Confirmação para: {detalhe?.comercio?.nome}. Vencimento atual: {fdate(a.proximo_vencimento)}.</p>
               </>
