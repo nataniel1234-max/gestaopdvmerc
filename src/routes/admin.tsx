@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, ShieldCheck } from "lucide-react";
 import { invalidarTudo } from "@/lib/sync";
+import { useAuth } from "@/hooks/use-auth";
 
 const ADMIN_EMAIL = "natanmtf@gmail.com";
 
@@ -25,13 +26,17 @@ export const Route = createFileRoute("/admin")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
-  beforeLoad: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth" });
-    if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) throw redirect({ to: "/" });
-  },
-  component: AdminPage,
+  component: AdminAccess,
 });
+
+function AdminAccess() {
+  const { user, loading, isSuperadmin } = useAuth();
+  if (loading || !user) return null;
+  if (user.email?.toLowerCase() !== ADMIN_EMAIL || !isSuperadmin) {
+    return <p className="text-sm text-destructive">Acesso não autorizado.</p>;
+  }
+  return <AdminPage />;
+}
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fdate = (s?: string | null) => (s ? new Date(s).toLocaleDateString("pt-BR") : "—");
@@ -48,14 +53,18 @@ function AdminPage() {
   const [comercioId, setComercioId] = useState<string | null>(null);
   const qc = useQueryClient();
 
-  const { data: comercios } = useQuery({
+  const { data: comercios, error: listError } = useQuery({
     queryKey: ["admin-comercios"],
     queryFn: async () => {
-      const { data: cs } = await supabase.from("comercios").select("id, nome, documento, telefone, created_at").order("created_at");
-      const { data: as } = await supabase.from("assinaturas").select("*");
-      const { data: rs } = await supabase
-        .from("user_roles").select("comercio_id, role, profiles:user_id(display_name)");
+      const [{ data: cs, error: csError }, { data: as, error: asError }, { data: rs, error: rsError }, { data: ps }] = await Promise.all([
+        supabase.from("comercios").select("id, nome, documento, telefone, created_at").order("created_at"),
+        supabase.from("assinaturas").select("*"),
+        supabase.from("user_roles").select("user_id, comercio_id, role"),
+        supabase.from("profiles").select("user_id, display_name"),
+      ]);
+      if (csError || asError || rsError) throw csError ?? asError ?? rsError;
       const aMap = new Map((as ?? []).map((a: any) => [a.comercio_id, a]));
+      const nomes = new Map((ps ?? []).map((p) => [p.user_id, p.display_name]));
       const rMap = new Map<string, any[]>();
       (rs ?? []).forEach((r: any) => {
         if (!rMap.has(r.comercio_id)) rMap.set(r.comercio_id, []);
@@ -73,7 +82,7 @@ function AdminPage() {
           else if (hoje <= limite!) status = "em_carencia";
           else status = "vencida";
         }
-        return { ...c, assinatura: a, status, donos: (rMap.get(c.id) ?? []).filter((r) => r.role === "dono") };
+        return { ...c, assinatura: a, status, donos: (rMap.get(c.id) ?? []).filter((r) => r.role === "dono").map((r) => nomes.get(r.user_id)).filter(Boolean) };
       });
     },
   });
@@ -114,6 +123,7 @@ function AdminPage() {
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Vencidas</CardTitle></CardHeader><CardContent className="text-2xl font-bold text-destructive">{totais.vencidas}</CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">MRR</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{fmt(totais.mrr)}</CardContent></Card>
       </div>
+      {listError && <p className="text-sm text-destructive">Não foi possível carregar todos os comércios. Tente novamente antes de confirmar pagamentos.</p>}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2">
@@ -133,7 +143,7 @@ function AdminPage() {
               {lista.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-sm">{c.donos.map((d: any) => d.profiles?.display_name).filter(Boolean).join(", ") || "—"}</TableCell>
+                   <TableCell className="text-sm">{c.donos.join(", ") || "—"}</TableCell>
                   <TableCell className="text-sm">{fdate(c.created_at)}</TableCell>
                   <TableCell className="text-sm">{c.assinatura ? fdate(c.assinatura.proximo_vencimento) : "—"}</TableCell>
                   <TableCell className="text-sm">{c.assinatura ? fmt(Number(c.assinatura.valor_mensal)) : "—"}</TableCell>
@@ -157,7 +167,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
   const qc = useQueryClient();
   const [registrando, setRegistrando] = useState(false);
 
-  const { data: detalhe } = useQuery({
+  const { data: detalhe, error: detalheError } = useQuery({
     queryKey: ["admin-detalhe", comercioId],
     enabled: open,
     queryFn: async () => {
@@ -168,6 +178,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
         supabase.from("sessoes_acesso").select("*").eq("comercio_id", comercioId!).order("iniciada_em", { ascending: false }).limit(50),
         supabase.from("auditoria").select("*").eq("comercio_id", comercioId!).order("created_at", { ascending: false }).limit(100),
       ]);
+      if (c.error || a.error || p.error || s.error || au.error) throw c.error ?? a.error ?? p.error ?? s.error ?? au.error;
       return { comercio: c.data, assinatura: a.data, pagamentos: p.data ?? [], sessoes: s.data ?? [], auditoria: au.data ?? [] };
     },
   });
@@ -194,8 +205,9 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
       dias_carencia: Number(carencia || carenciaAtual),
       proximo_vencimento: venc || vencAtual,
     };
-    const { error } = await supabase.from("assinaturas").update(payload).eq("comercio_id", comercioId);
+    const { data: atualizada, error } = await supabase.from("assinaturas").update(payload).eq("comercio_id", comercioId).select("id").maybeSingle();
     if (error) return toast.error(error.message);
+    if (!atualizada) return toast.error("Nenhuma assinatura foi alterada. Confira o cadastro selecionado.");
     toast.success("Assinatura atualizada");
     await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
     onChange();
@@ -211,15 +223,24 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
       const [ano, mes, dia] = base.split("-").map(Number);
       const proxData = new Date(ano, mes, Math.min(dia, new Date(ano, mes + 1, 0).getDate()));
       const prox = `${proxData.getFullYear()}-${String(proxData.getMonth() + 1).padStart(2, "0")}-${String(proxData.getDate()).padStart(2, "0")}`;
-      const { error } = await supabase.from("pagamentos_assinatura").insert({
+      const { data: pagamento, error } = await supabase.from("pagamentos_assinatura").insert({
         comercio_id: comercioId, valor: Number(a.valor_mensal),
         data_pagamento: hoje, referente_a: a.proximo_vencimento, proximo_vencimento: prox, forma: "manual",
-      } as never);
+      } as never).select("id").single();
       if (error) return toast.error(error.message);
+      const { data: assinaturaAtualizada, error: liberacaoErro } = await supabase.from("assinaturas")
+        .select("ativa, proximo_vencimento, ultimo_pagamento")
+        .eq("comercio_id", comercioId).maybeSingle();
       await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
       invalidarTudo(qc);
       onChange();
-      toast.success("Pagamento confirmado. Assinatura liberada.");
+      if (liberacaoErro || !assinaturaAtualizada?.ativa || assinaturaAtualizada.proximo_vencimento !== prox || !pagamento) {
+        toast.error("Pagamento registrado, mas a liberação não foi confirmada. Confira a assinatura antes de continuar.");
+        return;
+      }
+      toast.success(`Pagamento confirmado e ${detalhe?.comercio?.nome ?? "comércio"} liberado até ${fdate(prox)}.`);
+    } catch {
+      toast.error("Não foi possível confirmar o pagamento. Tente novamente.");
     } finally {
       setRegistrando(false);
     }
@@ -227,9 +248,10 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
 
   const toggleAtiva = async () => {
     if (!comercioId || !a) return;
-    const { error } = await supabase.from("assinaturas").update({ ativa: !a.ativa }).eq("comercio_id", comercioId);
+    const { data: atualizada, error } = await supabase.from("assinaturas").update({ ativa: !a.ativa }).eq("comercio_id", comercioId).select("ativa").maybeSingle();
     if (error) return toast.error(error.message);
-    toast.success(a.ativa ? "Bloqueada" : "Reativada");
+    if (!atualizada || atualizada.ativa === a.ativa) return toast.error("Não foi possível alterar a liberação deste cadastro.");
+    toast.success(a.ativa ? "Bloqueada" : "Desbloqueada. O vencimento não foi alterado.");
     await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
     invalidarTudo(qc);
     onChange();
@@ -239,6 +261,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{detalhe?.comercio?.nome ?? "Comércio"}</DialogTitle></DialogHeader>
+        {detalheError && <p className="text-sm text-destructive">Não foi possível conferir os dados deste comércio. Feche e tente novamente.</p>}
 
         <Tabs defaultValue="assinatura">
           <TabsList className="grid grid-cols-4 w-full">
@@ -258,9 +281,10 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={salvar}>Salvar alterações</Button>
-                  <Button variant="secondary" disabled={registrando} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
-                  <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Reativar"}</Button>
+                  <Button variant="secondary" disabled={registrando || !!detalheError} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
+                  <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Desbloquear (sem renovar)"}</Button>
                 </div>
+                <p className="text-sm text-muted-foreground">Confirmação para: {detalhe?.comercio?.nome}. Vencimento atual: {fdate(a.proximo_vencimento)}.</p>
               </>
             ) : <p className="text-sm text-muted-foreground">Sem assinatura.</p>}
           </TabsContent>
