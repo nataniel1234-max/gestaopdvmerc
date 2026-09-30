@@ -53,27 +53,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isDono, setIsDono] = useState(false);
   const [loading, setLoading] = useState(true);
   const sessaoIdRef = useRef<string | null>(null);
+  const consultaRef = useRef(0);
 
   const loadDados = async (uid: string | undefined) => {
+    const consulta = ++consultaRef.current;
     if (!uid) {
       setComercio(null); setAssinatura(null); setIsSuperadmin(false); setIsDono(false);
       return;
     }
-    const { data: roles } = await supabase
+    const { data: roles, error: rolesError } = await supabase
       .from("user_roles")
       .select("role, comercio_id, comercios(id, nome)")
       .eq("user_id", uid)
       .order("created_at", { ascending: true });
+    if (rolesError || consulta !== consultaRef.current) return;
     const lista = (roles ?? []) as any[];
-    setIsSuperadmin(lista.some((r) => r.role === "superadmin"));
+    const superadmin = lista.some((r) => r.role === "superadmin");
     const donoRow = lista.find((r) => r.role === "dono") ?? lista.find((r) => r.role !== "superadmin");
-    setIsDono(!!donoRow && donoRow.role === "dono");
     const c = donoRow?.comercios;
     if (c) {
+      const { data: a, error: assinaturaError } = await supabase.from("assinaturas").select("*").eq("comercio_id", c.id).maybeSingle();
+      if (assinaturaError || consulta !== consultaRef.current) return;
+      setIsSuperadmin(superadmin);
+      setIsDono(donoRow.role === "dono");
       setComercio({ id: c.id, nome: c.nome });
-      const { data: a } = await supabase.from("assinaturas").select("*").eq("comercio_id", c.id).maybeSingle();
-       setAssinatura(a ? calcStatus(a) : null);
+      setAssinatura(a ? calcStatus(a) : null);
     } else {
+      setIsSuperadmin(superadmin);
+      setIsDono(false);
       setComercio(null); setAssinatura(null);
     }
   };
@@ -109,7 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null);
       if (event === "SIGNED_IN" && s?.user) setTimeout(() => iniciarSessao(s.user!), 50);
       if (event === "SIGNED_OUT") encerrarSessao();
-      setTimeout(() => loadDados(s?.user?.id), 0);
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        setTimeout(() => loadDados(s?.user?.id), 0);
+      }
     });
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
@@ -129,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (ch) ch.onmessage = atualizar;
     window.addEventListener("focus", atualizar);
     document.addEventListener("visibilitychange", atualizar);
-    const timer = window.setInterval(atualizar, 60000);
+    const timer = window.setInterval(atualizar, 15000);
     return () => {
       ch?.close();
       window.removeEventListener("focus", atualizar);
