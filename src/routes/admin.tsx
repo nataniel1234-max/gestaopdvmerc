@@ -56,13 +56,15 @@ function AdminPage() {
   const { data: comercios } = useQuery({
     queryKey: ["admin-comercios"],
     queryFn: async () => {
-      const [{ data: cs, error: csError }, { data: as, error: asError }, { data: rs, error: rsError }] = await Promise.all([
+      const [{ data: cs, error: csError }, { data: as, error: asError }, { data: rs, error: rsError }, { data: ps }] = await Promise.all([
         supabase.from("comercios").select("id, nome, documento, telefone, created_at").order("created_at"),
         supabase.from("assinaturas").select("*"),
-        supabase.from("user_roles").select("comercio_id, role, profiles:user_id(display_name)"),
+        supabase.from("user_roles").select("user_id, comercio_id, role"),
+        supabase.from("profiles").select("user_id, display_name"),
       ]);
       if (csError || asError || rsError) throw csError ?? asError ?? rsError;
       const aMap = new Map((as ?? []).map((a: any) => [a.comercio_id, a]));
+      const nomes = new Map((ps ?? []).map((p) => [p.user_id, p.display_name]));
       const rMap = new Map<string, any[]>();
       (rs ?? []).forEach((r: any) => {
         if (!rMap.has(r.comercio_id)) rMap.set(r.comercio_id, []);
@@ -80,7 +82,7 @@ function AdminPage() {
           else if (hoje <= limite!) status = "em_carencia";
           else status = "vencida";
         }
-        return { ...c, assinatura: a, status, donos: (rMap.get(c.id) ?? []).filter((r) => r.role === "dono") };
+        return { ...c, assinatura: a, status, donos: (rMap.get(c.id) ?? []).filter((r) => r.role === "dono").map((r) => nomes.get(r.user_id)).filter(Boolean) };
       });
     },
   });
@@ -140,7 +142,7 @@ function AdminPage() {
               {lista.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-sm">{c.donos.map((d: any) => d.profiles?.display_name).filter(Boolean).join(", ") || "—"}</TableCell>
+                   <TableCell className="text-sm">{c.donos.join(", ") || "—"}</TableCell>
                   <TableCell className="text-sm">{fdate(c.created_at)}</TableCell>
                   <TableCell className="text-sm">{c.assinatura ? fdate(c.assinatura.proximo_vencimento) : "—"}</TableCell>
                   <TableCell className="text-sm">{c.assinatura ? fmt(Number(c.assinatura.valor_mensal)) : "—"}</TableCell>
