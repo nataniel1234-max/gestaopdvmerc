@@ -59,8 +59,7 @@ function AdminPage() {
       const [{ data: cs, error: csError }, { data: as, error: asError }, { data: rs, error: rsError }] = await Promise.all([
         supabase.from("comercios").select("id, nome, documento, telefone, created_at").order("created_at"),
         supabase.from("assinaturas").select("*"),
-        supabase
-        .from("user_roles").select("comercio_id, role, profiles:user_id(display_name)");
+        supabase.from("user_roles").select("comercio_id, role, profiles:user_id(display_name)"),
       ]);
       if (csError || asError || rsError) throw csError ?? asError ?? rsError;
       const aMap = new Map((as ?? []).map((a: any) => [a.comercio_id, a]));
@@ -281,7 +280,6 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
                   <Button variant="secondary" disabled={registrando} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
                   <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Reativar"}</Button>
                 </div>
-              </>
                 <p className="text-sm text-muted-foreground">Confirmação para: {detalhe?.comercio?.nome}. Vencimento atual: {fdate(a.proximo_vencimento)}.</p>
               </>
             ) : <p className="text-sm text-muted-foreground">Sem assinatura.</p>}
