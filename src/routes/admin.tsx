@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, ShieldCheck } from "lucide-react";
 import { invalidarTudo } from "@/lib/sync";
+import { useAuth } from "@/hooks/use-auth";
 
 const ADMIN_EMAIL = "natanmtf@gmail.com";
 
@@ -25,13 +26,17 @@ export const Route = createFileRoute("/admin")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
-  beforeLoad: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth" });
-    if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) throw redirect({ to: "/" });
-  },
-  component: AdminPage,
+  component: AdminAccess,
 });
+
+function AdminAccess() {
+  const { user, loading, isSuperadmin } = useAuth();
+  if (loading || !user) return null;
+  if (user.email?.toLowerCase() !== ADMIN_EMAIL || !isSuperadmin) {
+    return <p className="text-sm text-destructive">Acesso não autorizado.</p>;
+  }
+  return <AdminPage />;
+}
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fdate = (s?: string | null) => (s ? new Date(s).toLocaleDateString("pt-BR") : "—");
@@ -51,10 +56,13 @@ function AdminPage() {
   const { data: comercios } = useQuery({
     queryKey: ["admin-comercios"],
     queryFn: async () => {
-      const { data: cs } = await supabase.from("comercios").select("id, nome, documento, telefone, created_at").order("created_at");
-      const { data: as } = await supabase.from("assinaturas").select("*");
-      const { data: rs } = await supabase
+      const [{ data: cs, error: csError }, { data: as, error: asError }, { data: rs, error: rsError }] = await Promise.all([
+        supabase.from("comercios").select("id, nome, documento, telefone, created_at").order("created_at"),
+        supabase.from("assinaturas").select("*"),
+        supabase
         .from("user_roles").select("comercio_id, role, profiles:user_id(display_name)");
+      ]);
+      if (csError || asError || rsError) throw csError ?? asError ?? rsError;
       const aMap = new Map((as ?? []).map((a: any) => [a.comercio_id, a]));
       const rMap = new Map<string, any[]>();
       (rs ?? []).forEach((r: any) => {
@@ -168,6 +176,7 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
         supabase.from("sessoes_acesso").select("*").eq("comercio_id", comercioId!).order("iniciada_em", { ascending: false }).limit(50),
         supabase.from("auditoria").select("*").eq("comercio_id", comercioId!).order("created_at", { ascending: false }).limit(100),
       ]);
+      if (c.error || a.error || p.error || s.error || au.error) throw c.error ?? a.error ?? p.error ?? s.error ?? au.error;
       return { comercio: c.data, assinatura: a.data, pagamentos: p.data ?? [], sessoes: s.data ?? [], auditoria: au.data ?? [] };
     },
   });
@@ -194,8 +203,9 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
       dias_carencia: Number(carencia || carenciaAtual),
       proximo_vencimento: venc || vencAtual,
     };
-    const { error } = await supabase.from("assinaturas").update(payload).eq("comercio_id", comercioId);
+    const { data: atualizada, error } = await supabase.from("assinaturas").update(payload).eq("comercio_id", comercioId).select("id").maybeSingle();
     if (error) return toast.error(error.message);
+    if (!atualizada) return toast.error("Nenhuma assinatura foi alterada. Confira o cadastro selecionado.");
     toast.success("Assinatura atualizada");
     await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
     onChange();
@@ -211,15 +221,24 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
       const [ano, mes, dia] = base.split("-").map(Number);
       const proxData = new Date(ano, mes, Math.min(dia, new Date(ano, mes + 1, 0).getDate()));
       const prox = `${proxData.getFullYear()}-${String(proxData.getMonth() + 1).padStart(2, "0")}-${String(proxData.getDate()).padStart(2, "0")}`;
-      const { error } = await supabase.from("pagamentos_assinatura").insert({
+      const { data: pagamento, error } = await supabase.from("pagamentos_assinatura").insert({
         comercio_id: comercioId, valor: Number(a.valor_mensal),
         data_pagamento: hoje, referente_a: a.proximo_vencimento, proximo_vencimento: prox, forma: "manual",
-      } as never);
+      } as never).select("id").single();
       if (error) return toast.error(error.message);
+      const { data: assinaturaAtualizada, error: liberacaoErro } = await supabase.from("assinaturas")
+        .select("ativa, proximo_vencimento, ultimo_pagamento")
+        .eq("comercio_id", comercioId).maybeSingle();
       await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
       invalidarTudo(qc);
       onChange();
-      toast.success("Pagamento confirmado. Assinatura liberada.");
+      if (liberacaoErro || !assinaturaAtualizada?.ativa || assinaturaAtualizada.proximo_vencimento !== prox || !pagamento) {
+        toast.error("Pagamento registrado, mas a liberação não foi confirmada. Confira a assinatura antes de continuar.");
+        return;
+      }
+      toast.success(`Pagamento confirmado e ${detalhe?.comercio?.nome ?? "comércio"} liberado até ${fdate(prox)}.`);
+    } catch {
+      toast.error("Não foi possível confirmar o pagamento. Tente novamente.");
     } finally {
       setRegistrando(false);
     }
@@ -227,8 +246,9 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
 
   const toggleAtiva = async () => {
     if (!comercioId || !a) return;
-    const { error } = await supabase.from("assinaturas").update({ ativa: !a.ativa }).eq("comercio_id", comercioId);
+    const { data: atualizada, error } = await supabase.from("assinaturas").update({ ativa: !a.ativa }).eq("comercio_id", comercioId).select("ativa").maybeSingle();
     if (error) return toast.error(error.message);
+    if (!atualizada || atualizada.ativa === a.ativa) return toast.error("Não foi possível alterar a liberação deste cadastro.");
     toast.success(a.ativa ? "Bloqueada" : "Reativada");
     await qc.invalidateQueries({ queryKey: ["admin-detalhe", comercioId] });
     invalidarTudo(qc);
@@ -261,6 +281,8 @@ function DetalheComercio({ comercioId, onClose, onChange }: { comercioId: string
                   <Button variant="secondary" disabled={registrando} onClick={registrarPagamento}>{registrando ? "Confirmando..." : "Confirmar pagamento"}</Button>
                   <Button variant={a.ativa ? "destructive" : "default"} onClick={toggleAtiva}>{a.ativa ? "Bloquear" : "Reativar"}</Button>
                 </div>
+              </>
+                <p className="text-sm text-muted-foreground">Confirmação para: {detalhe?.comercio?.nome}. Vencimento atual: {fdate(a.proximo_vencimento)}.</p>
               </>
             ) : <p className="text-sm text-muted-foreground">Sem assinatura.</p>}
           </TabsContent>
